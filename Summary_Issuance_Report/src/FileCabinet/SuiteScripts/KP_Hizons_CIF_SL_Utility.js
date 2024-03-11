@@ -125,61 +125,61 @@ function(runtime, message, currentRecord, search, record, url, dialog, format, h
             });
             window.location.href = suiteletURL
         }
-        if (scriptContext.fieldId == 'custpage_form_chargeto' || scriptContext.fieldId == 'custpage_form_datefrom' || scriptContext.fieldId == 'custpage_form_dateto'){        
-            var dateFrom = currRecObj.getValue({
-                fieldId: 'custpage_form_datefrom'
-            });
+        // if (scriptContext.fieldId == 'custpage_form_chargeto' || scriptContext.fieldId == 'custpage_form_datefrom' || scriptContext.fieldId == 'custpage_form_dateto'){        
+        //     var dateFrom = currRecObj.getValue({
+        //         fieldId: 'custpage_form_datefrom'
+        //     });
 
-            var dateTo = currRecObj.getValue({
-                fieldId: 'custpage_form_dateto'
-            });
+        //     var dateTo = currRecObj.getValue({
+        //         fieldId: 'custpage_form_dateto'
+        //     });
 
-            var dateFrom = currRecObj.getValue({
-                fieldId: 'custpage_form_datefrom'
-              });
+        //     var dateFrom = currRecObj.getValue({
+        //         fieldId: 'custpage_form_datefrom'
+        //       });
         
-              if(dateFrom){
-                dateFrom = format.format({
-                    value: dateFrom,
-                    type: format.Type.DATE
-                });
-              }
+        //       if(dateFrom){
+        //         dateFrom = format.format({
+        //             value: dateFrom,
+        //             type: format.Type.DATE
+        //         });
+        //       }
               
         
-              var dateTo = currRecObj.getValue({
-                fieldId: 'custpage_form_dateto'
-              });
-              if(dateTo){
-                dateTo = format.format({
-                    value: dateTo,
-                    type: format.Type.DATE
-                });
-              }
+        //       var dateTo = currRecObj.getValue({
+        //         fieldId: 'custpage_form_dateto'
+        //       });
+        //       if(dateTo){
+        //         dateTo = format.format({
+        //             value: dateTo,
+        //             type: format.Type.DATE
+        //         });
+        //       }
 
-              console.log('dateFrom',dateFrom)
-              console.log('dateTo',dateTo)
-            var chargeTo = currRecObj.getValue({
-                fieldId: 'custpage_form_chargeto'
-            });
+        //       console.log('dateFrom',dateFrom)
+        //       console.log('dateTo',dateTo)
+        //     var chargeTo = currRecObj.getValue({
+        //         fieldId: 'custpage_form_chargeto'
+        //     });
 
-            var outlet = currRecObj.getValue({
-                fieldId: 'custpage_form_outlet'
-            });
+        //     var outlet = currRecObj.getValue({
+        //         fieldId: 'custpage_form_outlet'
+        //     });
 
-              if(dateFrom && dateTo && chargeTo){
-                var suiteletURL = url.resolveScript({
-                    scriptId: 'customscript_inv_adjustment_cif',
-                    deploymentId: 'customdeploy_inv_adjustment_cif',
-                    params: {
-                        dateFrom : dateFrom,
-                        dateTo : dateTo,
-                        chargeTo : chargeTo,
-                        outlet : outlet
-                    }
-                });
-                window.location.href = suiteletURL
-              }
-        }
+        //       if(dateFrom && dateTo && chargeTo){
+        //         var suiteletURL = url.resolveScript({
+        //             scriptId: 'customscript_inv_adjustment_cif',
+        //             deploymentId: 'customdeploy_inv_adjustment_cif',
+        //             params: {
+        //                 dateFrom : dateFrom,
+        //                 dateTo : dateTo,
+        //                 chargeTo : chargeTo,
+        //                 outlet : outlet
+        //             }
+        //         });
+        //         window.location.href = suiteletURL
+        //       }
+        // }
         if (scriptContext.fieldId == 'custpage_qty_released'){
             var unitPrice =  currRecObj.getSublistValue({
                 sublistId: 'custpage_food_menu_list',
