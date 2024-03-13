@@ -6,7 +6,8 @@
 var PAGE_SIZE = 50;
 var CLIENT_SCRIPT_FILE_ID = 13686;
 
-define(['N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redirect','N/file', 'N/render', './summary_of_issuance _report/hcs_template'], function(search, runtime, serverWidget, format, url, redirect, file, render,hcs_template) {
+define(['N/record', 'N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redirect','N/file', 'N/render', './summary_of_issuance _report/hcs_template'],
+function(record, search, runtime, serverWidget, format, url, redirect, file, render,hcs_template) {
   
     function onRequest(context) {
       if (context.request.method === 'GET') {
@@ -155,20 +156,56 @@ define(['N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redi
             value : '@NONE@',
             text : ''
         });*/
-
-        var empSrch = search.lookupFields({
+        let arrMultiLocation = []
+        let arrOptions = []
+        let objRecord = record.load({
             type: search.Type.EMPLOYEE,
             id: myUser.id,
-            columns: ['custentity_multiple_locations']
+            isDynamic: true,
         });
+        log.debug("objRecord", objRecord)
+        if (objRecord){
+            var locIds = objRecord.getValue({
+                fieldId: 'custentity_multiple_locations',
+            });
+            var locText = objRecord.getText({
+                fieldId: 'custentity_multiple_locations',
+            });
+            let objOption = {
+                value: locIds,
+                text: locText
+            }
+            arrMultiLocation.push(objOption)
+            log.debug('objRecord test',arrMultiLocation)
+        }
 
-        log.debug('empSrch',empSrch)
-        log.debug('length',empSrch.custentity_multiple_locations.length)
+        arrMultiLocation.forEach(data => {
+            arrValues = data.value
+            arrText = data.text
+            for (x=0; x < arrValues.length; x++){
+                let optValue = arrValues[x]
+                let optText = arrText[x]
+                arrOptions.push({
+                    value: optValue,
+                    text: optText
+                })
+            }
+        });
+        log.debug('objRecord arrOptions',arrOptions)
 
-        for(var e = 0; e<empSrch.custentity_multiple_locations.length; e++){
+        // var empSrch = search.lookupFields({
+        //     type: search.Type.EMPLOYEE,
+        //     id: myUser.id,
+        //     columns: 'custentity_multiple_locations'
+        // });
+
+        // log.debug('empSrch',empSrch)
+        // log.debug('length',empSrch.custentity_multiple_locations.length)
+
+        for(var e = 0; e < arrOptions.length; e++){
             outletf.addSelectOption({
-                value : empSrch.custentity_multiple_locations[e].value,
-                text : empSrch.custentity_multiple_locations[e].text
+                value : arrOptions[e].value,
+                text : arrOptions[e].text
             });
         }
 
@@ -342,6 +379,7 @@ define(['N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redi
           
 
           var retrieveSearch = runSearch(eventname, datefrom, dateto, chargeto, outlet, PAGE_SIZE);
+          log.debug('retrieveSearch',retrieveSearch)
           var pageCount = Math.ceil(retrieveSearch.count / PAGE_SIZE);
 
             // Set pageId to correct value if out of index
@@ -458,14 +496,14 @@ define(['N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redi
                     }*/
 
                     if(result.item){
-
-                        
                         sublist.setSublistValue({
                             id: 'custpage_item',
                             line: j,
                             value: result.item
                         });
+                    }
 
+                    if (result.item_internalid){
                         //-----------added by pcl 3-6-2024-----------
                         sublist.setSublistValue({
                             id: 'custpage_item_internal',
@@ -473,7 +511,6 @@ define(['N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redi
                             value: result.item_internalid
                         });
                         //-----------added by pcl 3-6-2024-----------
-                        
                     }
 
                     if(result.description){
