@@ -362,28 +362,39 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
               value: currentRecord.id
             })
 
-            //09072023 JJBM: Added code for event attendees from outlet
-            var attendeeCount = eventRec.getLineCount({
-              sublistId: 'attendee'
+            let strVenue = currentRecord.getText({
+                fieldId: 'custrecord_tc_costingsheet_location'
             })
-
-
-            eventRec.setSublistValue({
-              sublistId: 'attendee',
-              fieldId: 'attendee',
-              line: attendeeCount,
-              value: outletManager
+            log.debug('beforeSubmit: strVenue', strVenue)
+            let numLines = eventRec.getLineCount({
+                sublistId: 'attendee'
             })
-
-            eventRec.setSublistValue({
-              sublistId: 'attendee',
-              fieldId: 'response',
-              line: attendeeCount,
-              value: 'NORESPONSE'
-            })
-
+            log.debug('beforeSubmit: numLines', numLines)
+            if (strVenue){
+                let arrExistingAttendees = getExistingAttendees(currentRecord, numLines, runtime)
+                let arrAttendees = searchGroup(strVenue, arrExistingAttendees)
+                if (arrAttendees.length > 0){
+                    try {
+                        arrAttendees.forEach((data, index) => {
+                            for (let key in data) {
+                                if (data.hasOwnProperty(key)) {
+                                    let value = data[key];
+                                    eventRec.setSublistValue({
+                                        sublistId: 'attendee',
+                                        fieldId: key, 
+                                        value: value,
+                                        line: numLines + index,
+                                    });
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        log.error('beforeSubmit error', error.message);
+                    }
+                }
+            }
+            
             let objValue = {
-              response: attendeeCount, 
               attendee: outletManager, 
               custevent_event_costing_sheet: currentRecord.id,
               endtime: endTimeCos,
@@ -417,6 +428,8 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
 
             costSheetRec.save();
 
+            log.debug('foodcalendar test')
+
             //09072023 JJBM: Added calendar event to food menu record
             for (var i = 0; i < menuCnt; i++) {
 
@@ -437,7 +450,9 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                 value: eventId
               })
 
-              menuRecord.save();
+              menuRecord.save({
+                ignoreMandatoryFields: true
+              });
             }
           }
         } else {
@@ -623,24 +638,37 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
 
                 //event attendees from outlet
 
-                var attendeeCount = eventRec.getLineCount({
-                  sublistId: 'attendee'
+                let strVenue = currentRecord.getText({
+                  fieldId: 'custrecord_tc_costingsheet_location'
                 })
-
-
-                eventRec.setSublistValue({
-                  sublistId: 'attendee',
-                  fieldId: 'attendee',
-                  line: attendeeCount,
-                  value: outletManager
+                log.debug('beforeSubmit: strVenue', strVenue)
+                let numLines = eventRec.getLineCount({
+                    sublistId: 'attendee'
                 })
-
-                eventRec.setSublistValue({
-                  sublistId: 'attendee',
-                  fieldId: 'response',
-                  line: attendeeCount,
-                  value: 'NORESPONSE'
-                })
+                log.debug('beforeSubmit: numLines', numLines)
+                if (strVenue){
+                    let arrExistingAttendees = getExistingAttendees(currentRecord, numLines, runtime)
+                    let arrAttendees = searchGroup(strVenue, arrExistingAttendees)
+                    if (arrAttendees.length > 0){
+                        try {
+                            arrAttendees.forEach((data, index) => {
+                                for (let key in data) {
+                                    if (data.hasOwnProperty(key)) {
+                                        let value = data[key];
+                                        eventRec.setSublistValue({
+                                            sublistId: 'attendee',
+                                            fieldId: key, 
+                                            value: value,
+                                            line: numLines + index,
+                                        });
+                                    }
+                                }
+                            });
+                        } catch (error) {
+                            log.error('beforeSubmit error', error.message);
+                        }
+                    }
+                }
 
 
                 var eventId = eventRec.save();
@@ -696,6 +724,73 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
 
     }
 
+        //private function
+        const getExistingAttendees = (objCurrRec, numLines, runtime) => {
+          const userObj = runtime.getCurrentUser();
+          let intUserId = userObj.id
+          let arrAttendees = []
+          // for (let i = 0; i < numLines; i++) {
+          //     let intAttendee = objCurrRec.getSublistValue({
+          //         sublistId: 'attendee',
+          //         fieldId: 'attendee',
+          //         line: i
+          //     })
+          //     if (intAttendee){
+          //         arrAttendees.push(intAttendee)
+          //     }
+          // }
+          if (intUserId){
+            arrAttendees.push(intUserId)
+          } 
+          log.debug('getExistingAttendees: arrAttendees', arrAttendees)
+          return arrAttendees
+      }
+
+      const searchGroup = (strVenue, arrExistingAttendees) => {
+          let arrAttendees = [];
+          try {
+              let objGroupSearch = search.create({
+                  type: 'entitygroup',
+                  filters: [
+                      ['groupname', 'is', strVenue],
+                    ],
+                  columns: [
+                      search.createColumn({ name: 'internalid', join: 'groupmember' }),
+                  ],
+
+              });
+              var searchResultCount = objGroupSearch.runPaged().count;
+              if (searchResultCount != 0) {
+                  var pagedData = objGroupSearch.runPaged({pageSize: 1000});
+                  for (var i = 0; i < pagedData.pageRanges.length; i++) {
+                      var currentPage = pagedData.fetch(i);
+                      var pageData = currentPage.data;
+                      if (pageData.length > 0) {
+                          for (var pageResultIndex = 0; pageResultIndex < pageData.length; pageResultIndex++) {
+                              var intMemberId = pageData[pageResultIndex].getValue({ name: 'internalid', join: 'groupmember' });
+
+                              // Check if memberId already exists in arrTransaction
+                              var existingIndex = arrAttendees.findIndex(item => item.memberId === intMemberId);
+                              if (existingIndex == -1) {
+                                  // If doesn't exist, create a item
+                                  if (!arrExistingAttendees.includes(existingIndex)){
+                                      arrAttendees.push({
+                                        attendee: intMemberId,
+                                        response: 'ACCEPTED'
+                                      });
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+              log.debug(`searchGroup: arrAttendees ${Object.keys(arrAttendees).length}`, arrAttendees);
+              return arrAttendees;
+          } catch (err) {
+              log.error('searchGroup error', err.message);
+          }
+      }
+      
     return {
       beforeLoad: beforeLoad_hizon_cal_event,
       afterSubmit: afterSubmit_hizon_cal_event

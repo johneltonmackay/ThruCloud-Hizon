@@ -16,23 +16,23 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
          *
          * @since 2015.2
          */
-        
+
+        const arrBaseMenuFieldIds = [
+            ...proposalMapping.BASE_MENU_FIELDS.FLORAL_PRICE,
+            ...proposalMapping.BASE_MENU_FIELDS.PROPOSED_PRICE
+        ];
+          
+        const arrAddonFieldIds = [
+            ...proposalMapping.ADD_ON_FIELDS.NET_PRICE,
+            ...proposalMapping.ADD_ON_FIELDS.PROPOSED_PRICE
+        ];
+          
+
         function pageInit(scriptContext) {
             try {
                 console.log('pageInit: Page Fully Loaded.');
                 var currentRecord = scriptContext.currentRecord;
-                var numLines = currentRecord.getLineCount({
-                    sublistId: 'recmachcustrecord_transaction_fb_food'
-                });
-                for (let x = 0; x < numLines; x++) {
-                    let recId = currentRecord.getCurrentSublistValue({
-                        sublistId: 'recmachcustrecord_transaction_fb_food',
-                        fieldId: 'recordid',
-                        line: x
-                    })
-                    console.log('pageInit: recId', recId);
-                }
-
+                processAddOns(currentRecord, proposalMapping, scriptContext, false)
             } catch (error) {
                 console.log('Error: pageInit', error.message);
             }
@@ -42,13 +42,6 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
             try {
                 // console.log('fieldChanged', scriptContext.fieldId)
                 var currentRecord = scriptContext.currentRecord;
-                let arrBaseFloralFieldIds = proposalMapping.BASE_MENU_FIELDS.FLORAL_PRICE
-                let arrBaseProposedFieldIds = proposalMapping.BASE_MENU_FIELDS.PROPOSED_PRICE
-                let arrBaseMenuFieldIds = arrBaseFloralFieldIds.concat(arrBaseProposedFieldIds);
-
-                let arrAddonNetFieldIds = proposalMapping.ADD_ON_FIELDS.NET_PRICE
-                let arrAddonProposedFieldIds = proposalMapping.ADD_ON_FIELDS.PROPOSED_PRICE
-                let arrAddonFieldIds = arrAddonNetFieldIds.concat(arrAddonProposedFieldIds);
 
                 // console.log('fieldChanged arrAddonFieldIds', arrAddonFieldIds)
 
@@ -111,7 +104,7 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
             let arrAddOnData = []
 
             let intBanquetType = currentRecord.getValue({
-                fieldId:'custbody_proposal_banquet_type'
+                fieldId:'custbody_banquet_type_beo'
             })
 
             if (blnControlFlow){
@@ -258,7 +251,7 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
 
         const updateBaseMenu = (currentRecord, proposalMapping) => {
             let intBanquetType = currentRecord.getValue({
-                fieldId:'custbody_proposal_banquet_type'
+                fieldId:'custbody_banquet_type_beo'
             })
             let intBaseMenu = currentRecord.getValue({
                 fieldId:'custbody_final_menu_base'

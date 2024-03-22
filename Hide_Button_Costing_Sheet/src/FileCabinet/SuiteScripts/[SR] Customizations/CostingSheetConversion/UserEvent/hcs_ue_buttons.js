@@ -145,24 +145,30 @@ define([
                     if(strStatus == mapping.GLOBAL.status.approved) {
                           if(chargeTo != 3){
                             if(hasRequisition === false && isIngSum){
-                                objForm.addButton({
-                                    id: 'custpage_btn_createpr',
-                                    label: 'Create PR',
-                                    functionName: `
-                                        window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
-                                    `
-                                })
+                                let blnValidator = hideSRPRButton(scriptContext)
+                                if (blnValidator){
+                                    objForm.addButton({
+                                        id: 'custpage_btn_createpr',
+                                        label: 'Create PR',
+                                        functionName: `
+                                            window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
+                                        `
+                                    })
+                                }
 							}
                           }
                           else{
                             if(hasRequisition === false && isIngSum && soShowBtn && eventDateShowBtn){
-                                objForm.addButton({
-                                    id: 'custpage_btn_createpr',
-                                    label: 'Create PR',
-                                    functionName: `
-                                        window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
-                                    `
-                                })
+                                let blnValidator = hideSRPRButton(scriptContext)
+                                if (blnValidator){
+                                    objForm.addButton({
+                                        id: 'custpage_btn_createpr',
+                                        label: 'Create PR',
+                                        functionName: `
+                                            window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
+                                        `
+                                    })
+                                }
 							}
                           }
 
@@ -258,13 +264,21 @@ define([
             })
             log.debug('hideSRButton intLocation', intLocation);
 
-            let intBanquetType = recNewRecord.getValue({
+            let strBanquetType = recNewRecord.getValue({
                 fieldId: 'custrecord_trans_banquet_type'
             })
-            log.debug('hideSRButton intBanquetType', intBanquetType);
+            log.debug('hideSRButton intBanquetType', strBanquetType);
 
-            if (intLocation == 3 && intBanquetType == 'Banquet Type 2'){
-                log.debug('hideSRButton test');
+            let strBeoType = recNewRecord.getValue({
+                fieldId: 'custrecord_trans_beo_type'
+            })
+            log.debug('hideSRButton strBeoType', strBeoType);
+
+            if (strBeoType == 'CUSTOMIZED'){
+                log.debug('hideSRButton CUSTOMIZED');
+                blnValidator = true
+            } else if (intLocation == 3 && strBanquetType == 'Banquet Type 2'){
+                log.debug('hideSRButton Banquet Type 2');
                 blnValidator = false
             }
         }
@@ -272,6 +286,27 @@ define([
         return blnValidator
     }
 
+    const hideSRPRButton = (scriptContext) => {
+        let blnValidator = false
+        const recNewRecord = scriptContext.newRecord;
+        const strRecordType = recNewRecord.type;
+        log.debug('hideSRPRButton strRecordType', strRecordType);
+
+        if (strRecordType == 'customrecord_costing_sheet'){
+            
+            let strBeoType = recNewRecord.getValue({
+                fieldId: 'custrecord_trans_beo_type'
+            })
+            log.debug('hideSRButton strBeoType', strBeoType);
+
+            if (strBeoType == 'CUSTOMIZED'){
+                log.debug('hideSRButton CUSTOMIZED');
+                blnValidator = true
+            } 
+        }
+
+        return blnValidator
+    }
 
     return {beforeLoad}
 
