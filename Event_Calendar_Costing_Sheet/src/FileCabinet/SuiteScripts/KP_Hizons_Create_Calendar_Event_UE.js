@@ -372,7 +372,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
             log.debug('beforeSubmit: numLines', numLines)
             if (strVenue){
                 let arrExistingAttendees = getExistingAttendees(currentRecord, numLines, runtime)
-                let arrAttendees = searchGroup(strVenue, arrExistingAttendees)
+                let arrAttendees = searchGroup(strVenue, arrExistingAttendees, chargeTo)
                 if (arrAttendees.length > 0){
                     try {
                         arrAttendees.forEach((data, index) => {
@@ -648,7 +648,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                 log.debug('beforeSubmit: numLines', numLines)
                 if (strVenue){
                     let arrExistingAttendees = getExistingAttendees(currentRecord, numLines, runtime)
-                    let arrAttendees = searchGroup(strVenue, arrExistingAttendees)
+                    let arrAttendees = searchGroup(strVenue, arrExistingAttendees, chargeTo)
                     if (arrAttendees.length > 0){
                         try {
                             arrAttendees.forEach((data, index) => {
@@ -729,16 +729,6 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
           const userObj = runtime.getCurrentUser();
           let intUserId = userObj.id
           let arrAttendees = []
-          // for (let i = 0; i < numLines; i++) {
-          //     let intAttendee = objCurrRec.getSublistValue({
-          //         sublistId: 'attendee',
-          //         fieldId: 'attendee',
-          //         line: i
-          //     })
-          //     if (intAttendee){
-          //         arrAttendees.push(intAttendee)
-          //     }
-          // }
           if (intUserId){
             arrAttendees.push(intUserId)
           } 
@@ -746,8 +736,9 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
           return arrAttendees
       }
 
-      const searchGroup = (strVenue, arrExistingAttendees) => {
+      const searchGroup = (strVenue, arrExistingAttendees, chargeTo) => {
           let arrAttendees = [];
+          let strChargeTo = '';
           try {
               let objGroupSearch = search.create({
                   type: 'entitygroup',
@@ -773,10 +764,17 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                               var existingIndex = arrAttendees.findIndex(item => item.memberId === intMemberId);
                               if (existingIndex == -1) {
                                   // If doesn't exist, create a item
-                                  if (!arrExistingAttendees.includes(existingIndex)){
+                                  if (chargeTo == 3){
+                                    chargeTo = 'ACCEPTED';
+                                  } else if (chargeTo == 4){
+                                    chargeTo = 'NO RESPONSE';
+                                  } else if (chargeTo == 26){
+                                    chargeTo = 'TENTATIVE';
+                                  }
+                                  if (!arrExistingAttendees.includes(parseInt(intMemberId))){
                                       arrAttendees.push({
                                         attendee: intMemberId,
-                                        response: 'ACCEPTED'
+                                        response: chargeTo
                                       });
                                   }
                               }

@@ -3,7 +3,7 @@
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
  */
-var PAGE_SIZE = 50;
+var PAGE_SIZE = 1000;
 var CLIENT_SCRIPT_FILE_ID = 13686;
 
 define(['N/record', 'N/search', 'N/runtime','N/ui/serverWidget','N/format', 'N/url', 'N/redirect','N/file', 'N/render', './summary_of_issuance _report/hcs_template'],
@@ -94,6 +94,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             log.debug('inside if',datefrom)
             log.debug('inside if',dateto)
             log.debug('inside if',chargeto)
+            let checkExisting = [] 
             var eventNamef = form.addField({
                 id: 'custpage_form_eventname',
                 type: serverWidget.FieldType.MULTISELECT,
@@ -102,15 +103,15 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             });
 
             var customrecordCostingSheetSearchColInternalId = search.createColumn({ name: 'internalid' });
-            var customrecordCostingSheetSearchColName = search.createColumn({ name: 'name'});
+            var customrecordCostingSheetSearchColName = search.createColumn({ name: 'custrecord_related_topsheet'});
             
             
             var customrecordCostingSheetSearch = search.create({
-                type: 'customrecord_costing_sheet',
+                type: 'customrecord_food_menu_fb',
                 filters: [
-                    ['custrecord_charge_to', 'anyof', chargeto],
+                    ['custrecord_rel_top_sheet_charge_to', 'anyof', chargeto],
                     'AND',
-                    ['custrecord_event_date', 'within', datefrom, dateto],
+                    ['custrecord_fcs_date', 'within', datefrom, dateto],
                 ],
                 columns: [
                     customrecordCostingSheetSearchColName,
@@ -124,15 +125,16 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 var customrecordCostingSheetSearchPage = customrecordCostingSheetSearchPagedData.fetch({ index: j });
                 customrecordCostingSheetSearchPage.data.forEach(function (result){
                     var internalId = result.getValue(customrecordCostingSheetSearchColInternalId);
-                    var name = result.getValue(customrecordCostingSheetSearchColName);
-                    log.debug('internalId',internalId)
-                    log.debug('name',name)
-                    eventNamef.addSelectOption({
-                        value : internalId,
-                        text : name
-                    });
-                    
-
+                    var RecName = result.getText(customrecordCostingSheetSearchColName);
+                    // log.debug('internalId',internalId)
+                    // log.debug('RecName',RecName)
+                    if (!checkExisting.includes(RecName)){
+                        checkExisting.push(RecName)
+                        eventNamef.addSelectOption({
+                            value : RecName,
+                            text : RecName
+                        });
+                    }
                 });
             }
         }
@@ -256,9 +258,9 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             type: serverWidget.FieldType.TEXT,
             label: 'Id'
           });
-          fmId.updateDisplayType({
-            displayType: serverWidget.FieldDisplayType.HIDDEN
-          });
+        //   fmId.updateDisplayType({
+        //     displayType: serverWidget.FieldDisplayType.HIDDEN
+        //   });
 
           /*sublist.addField({
             id: 'custpage_outlet',
@@ -419,6 +421,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                     label : 'Page Index',
                     type : serverWidget.FieldType.SELECT
             });
+            selectOptions.updateDisplayType({displayType: serverWidget.FieldDisplayType.HIDDEN});
  
             form.clientScriptModulePath = 'SuiteScripts/KP_Hizons_CIF_SL_Utility.js';
 
@@ -613,7 +616,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             }*/
 
           var button = form.addSubmitButton({
-	    		label : 'Submit for Printing'
+	    		label : 'Print'
 	    	})
 
             context.response.writePage({
@@ -890,7 +893,14 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             name: 'custrecord_qty_remaining',
             join: 'custrecord_related_food_menu',
             operator: search.Operator.NOTLESSTHANOREQUALTO,
-            values: 0
+            values: 0.01
+        }));
+
+        myFilter.push(search.createFilter({
+            name: 'custrecord_customingdt_commongk',
+            join: 'custrecord_related_food_menu',
+            operator: search.Operator.IS,
+            values: false
         }));
 
         /*myFilter.push(search.createFilter({
@@ -972,6 +982,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
     }
 
     function fetchSearchResult(pagedData, pageIndex) {
+        let arrConsolidatedResults = []
         var fmResults = new Array();
         log.debug('pagedData',pagedData)
         log.debug('pageIndex',pageIndex)
@@ -1011,40 +1022,37 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             var customrecord_food_menu_fbSearchColReleaseDate = result.getValue({ name: 'formuladate', summary: search.Summary.GROUP, formula: '{today}' });
             var customrecord_food_menu_fbSearchColQtyToBeReleased = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });*/
             //var customrecord_food_menu_fbSearchColExternalId = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
-
-            fmResults.push({
-                "id": customrecord_food_menu_fbSearchColId,
-                /*"outlet": customrecord_food_menu_fbSearchColOutletSTR,
-                "outletVal": customrecord_food_menu_fbSearchColOutlet,
-                "chargeto": customrecord_food_menu_fbSearchColChargeToSTR,
-                "chargetoVal": customrecord_food_menu_fbSearchColChargeTo,
-                "classification": customrecord_food_menu_fbSearchColItemClassification,*/
-                "item_internalid" : custrecordRelatedFoodMenuITEMINTERNAL, //added by pcl 3-4-2024
-                "item": custrecordRelatedFoodMenuITEMCODE,
-                "description": custrecordRelatedFoodMenuITEMDESCRIPTION,
-                "qtyNeeded": custrecordRelatedFoodMenuQTYNEEDED,
-                "unit": custrecordRelatedFoodMenuUNITOFMEASURESTR,
-                "price": custrecordRelatedFoodMenuUnitPrice,
-                "qtyStock": qtyissued
-                //"unitVal": customrecord_food_menu_fbSearchColUom,
-                //"totalcost": totalcost
-                //"qtyReleased": customrecord_food_menu_fbSearchColQtyToBeReleased,
-                //"externalId": customrecord_food_menu_fbSearchColExternalId
-            });
-    
+            if (parseFloat(custrecordRelatedFoodMenuQTYNEEDED) >= 0.01){
+                fmResults.push({
+                    "id": customrecord_food_menu_fbSearchColId,
+                    /*"outlet": customrecord_food_menu_fbSearchColOutletSTR,
+                    "outletVal": customrecord_food_menu_fbSearchColOutlet,
+                    "chargeto": customrecord_food_menu_fbSearchColChargeToSTR,
+                    "chargetoVal": customrecord_food_menu_fbSearchColChargeTo,
+                    "classification": customrecord_food_menu_fbSearchColItemClassification,*/
+                    "item_internalid" : custrecordRelatedFoodMenuITEMINTERNAL, //added by pcl 3-4-2024
+                    "item": custrecordRelatedFoodMenuITEMCODE,
+                    "description": custrecordRelatedFoodMenuITEMDESCRIPTION,
+                    "qtyNeeded": custrecordRelatedFoodMenuQTYNEEDED,
+                    "unit": custrecordRelatedFoodMenuUNITOFMEASURESTR,
+                    "price": custrecordRelatedFoodMenuUnitPrice,
+                    "qtyStock": qtyissued
+                    //"unitVal": customrecord_food_menu_fbSearchColUom,
+                    //"totalcost": totalcost
+                    //"qtyReleased": customrecord_food_menu_fbSearchColQtyToBeReleased,
+                    //"externalId": customrecord_food_menu_fbSearchColExternalId
+                });
+            }    
         })
         let consolidatedResults = consolidateData(fmResults)
-
-        log.debug('fmResults',fmResults)
         return consolidatedResults;
-            // Continue processing the next page of search results
     }
 
-    function consolidateData(fmResults) {
+    function consolidateData(arrConsolidatedResults) {
         let consolidatedData = {};
     
         // Iterate through the original array
-        fmResults.forEach((item) => {
+        arrConsolidatedResults.forEach((item) => {
             let key = item.item_internalid; // Using the item_internalid directly as the key
     
             let intQuantity = item.qtyNeeded ? parseFloat(item.qtyNeeded) : 0.00;

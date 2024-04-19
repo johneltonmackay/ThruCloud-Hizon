@@ -9,7 +9,7 @@ define([
 
 ],
 (query, search, mapping) => {
-    
+
     const beforeLoad = (scriptContext) => {
         const recNewRecord = scriptContext.newRecord;
         const strRecordType = recNewRecord.type;
@@ -17,219 +17,149 @@ define([
         const objForm = scriptContext.form;
         const strSuiteLetConverter = '/app/site/hosting/scriptlet.nl?script=customscript_hcs_costingsheetconverte_sl&deploy=customdeploy_hcs_costingsheetconverte_sl'
 
-        const strStatus = recNewRecord.getValue({fieldId: 'custrecord_status'})
-        const intSubsidiary = recNewRecord.getValue({fieldId: 'custrecord_cs_subsidiary'})
+        const strStatus = recNewRecord.getValue({
+            fieldId: 'custrecord_status'
+        })
+        const intSubsidiary = recNewRecord.getValue({
+            fieldId: 'custrecord_cs_subsidiary'
+        })
         log.audit('fields', {
             status: strStatus,
             subsidiary: intSubsidiary
         })
         var res = query.runSuiteQL({
             query: `
-                select * from transaction where custbody_related_costing_sheet = ${recNewRecord.id} AND recordtype = 'salesorder';
-            `
+            select * from transaction where custbody_related_costing_sheet = ${recNewRecord.id} AND recordtype = 'salesorder';
+        `
         }).asMappedResults()
-        
-        var hasTransaction = res.length > 0? true: false
+
+        var hasTransaction = res.length > 0 ? true : false
 
 
-        var requisitionRes = query.runSuiteQL({
-            query: `
-                Select id, recordtype from transaction where custbody_related_costing_sheet = ${recNewRecord.id} AND recordtype = 'purchaserequisition'
-            `
-        }).asMappedResults();
-        var hasRequisition = requisitionRes.length > 0? true: false;
+        var isIngSum = recNewRecord.getValue({
+            fieldId: 'custrecord_ingdt_summary_generated'
+        });
+        var chargeTo = recNewRecord.getValue({
+            fieldId: 'custrecord_charge_to'
+        });
 
-        var transferOrderRes = query.runSuiteQL({
-            query: `
-                Select id, recordtype from transaction where custbody_related_costing_sheet = ${recNewRecord.id} AND recordtype = 'transferorder'
-            `
-        }).asMappedResults();
-        var hasTransferOrder = transferOrderRes.length > 0? true: false;
-
-        var isIngSum = recNewRecord.getValue({ fieldId: 'custrecord_ingdt_summary_generated'});
-		var chargeTo = recNewRecord.getValue({ fieldId: 'custrecord_charge_to'});
-		
-       if(scriptContext.type === scriptContext.UserEventType.EDIT || scriptContext.type === scriptContext.UserEventType.VIEW){
-			var soId = recNewRecord.getValue({ fieldId: 'custrecord_transaction_fcs'});
-			var soText = recNewRecord.getText({ fieldId: 'custrecord_transaction_fcs'});
-			var eventDate = recNewRecord.getText({ fieldId: 'custrecord_event_date'});
-			log.debug('soText', soText)
+        if (scriptContext.type === scriptContext.UserEventType.EDIT || scriptContext.type === scriptContext.UserEventType.VIEW) {
+            var soId = recNewRecord.getValue({
+                fieldId: 'custrecord_transaction_fcs'
+            });
+            var soText = recNewRecord.getText({
+                fieldId: 'custrecord_transaction_fcs'
+            });
+            var eventDate = recNewRecord.getText({
+                fieldId: 'custrecord_event_date'
+            });
+            var strBanquetType = recNewRecord.getValue({
+                fieldId: 'custrecord_trans_banquet_type'
+            })
+            log.debug('strBanquetType', strBanquetType);
+            log.debug('soText', soText)
             log.debug('soId', soId)
-		  
-			var soStrArr = soText.split(' ');
-			var soFields;
-			if((soStrArr[0] == 'Sales' && soStrArr[1] == 'Order') || soStrArr[0] == 'Proposal'){
-				 if(soStrArr[0] == 'Sales'){
-                   soFields = search.lookupFields({
-					  type: search.Type.SALES_ORDER,
-					  id: soId,
-					  columns: ['custbody_beo_type', 'custbody_hz_total_number_of_pax']
-				   });
-                 }
-                 else if(soStrArr[0] == 'Proposal'){
+
+            var soStrArr = soText.split(' ');
+            var soFields;
+            if ((soStrArr[0] == 'Sales' && soStrArr[1] == 'Order') || soStrArr[0] == 'Proposal') {
+                if (soStrArr[0] == 'Sales') {
                     soFields = search.lookupFields({
-					  type: search.Type.ESTIMATE,
-					  id: soId,
-					  columns: ['custbody_beo_type', 'custbody_hz_total_number_of_pax']
-				   });
-                 }
+                        type: search.Type.SALES_ORDER,
+                        id: soId,
+                        columns: ['custbody_beo_type', 'custbody_hz_total_number_of_pax']
+                    });
+                } else if (soStrArr[0] == 'Proposal') {
+                    soFields = search.lookupFields({
+                        type: search.Type.ESTIMATE,
+                        id: soId,
+                        columns: ['custbody_beo_type', 'custbody_hz_total_number_of_pax']
+                    });
+                }
 
-				var beoType;
-				var noPax = 0;
-              log.debug('soFields.length', soFields.length)
-              log.debug('soFields', soFields)
-              log.debug('soFields.custbody_beo_type', soFields.custbody_beo_type)
-              log.debug('soFields.custbody_hz_total_number_of_pax', soFields.custbody_hz_total_number_of_pax)
-			  if(soFields){
-				   if(soFields.custbody_beo_type.length > 0){
-					  beoType = soFields.custbody_beo_type[0].value;
-				   } 
+                var beoType;
+                var noPax = 0;
+                log.debug('soFields.length', soFields.length)
+                log.debug('soFields', soFields)
+                log.debug('soFields.custbody_beo_type', soFields.custbody_beo_type)
+                log.debug('soFields.custbody_hz_total_number_of_pax', soFields.custbody_hz_total_number_of_pax)
+                if (soFields) {
+                    if (soFields.custbody_beo_type.length > 0) {
+                        beoType = soFields.custbody_beo_type[0].value;
+                    }
 
-				   if(soFields.custbody_hz_total_number_of_pax.length > 0){
-					  noPax = soFields.custbody_hz_total_number_of_pax;
-				   } 
-			  }
+                    if (soFields.custbody_hz_total_number_of_pax.length > 0) {
+                        noPax = soFields.custbody_hz_total_number_of_pax;
+                    }
+                }
 
-			  var soShowBtn = false;
+                var soShowBtn = false;
 
-			  if((beoType == 1 && noPax > 50) || beoType == 2){
-				soShowBtn = true;
-			  }
-              log.debug('beoType',beoType)
-              log.debug('noPax',noPax)
-			  log.debug('XXX soShowBtn',soShowBtn)
+                if ((beoType == 1 && noPax > 50) || beoType == 2) {
+                    soShowBtn = true;
+                }
+                log.debug('soStrArr[0]', soStrArr[0])
+                log.debug('beoType', beoType)
+                log.debug('noPax', noPax)
+                log.debug('XXX soShowBtn', soShowBtn)
 
-			  var currentDate = new Date();
-			  currentDate.setHours(0, 0, 0, 0); // Set time to midnight
-              log.debug('currentDate',currentDate)
-			  // Set the target date (01/11/2024)
-			  var targetDate = new Date(eventDate);
-			  targetDate.setHours(0, 0, 0, 0); // Set time to midnight
-              log.debug('targetDate',targetDate)
-			  // Calculate the difference in milliseconds
-			  var difference = targetDate.getTime() - currentDate.getTime();
-              log.debug('difference',difference)
-			  // Convert the difference from milliseconds to days
-			  var differenceInDays = difference / (1000 * 3600 * 24);
-			  var eventDateShowBtn = false;
-			  var loc;
-			  
-			  if (differenceInDays <= 2 && noPax < 50) {
-				 eventDateShowBtn = false;
-			  }
-			  else if (differenceInDays <= 2 && noPax > 50) {
-				loc = 3;
-                eventDateShowBtn = true;
-			  } 
-              else if (differenceInDays > 2 && noPax > 50) {
-                eventDateShowBtn = true;
-			  } 
-              else if (differenceInDays > 2 && noPax < 50) {
-                eventDateShowBtn = true;
-			  } 
-			}
-		}
+                var currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0); // Set time to midnight
+                log.debug('currentDate', currentDate)
+                // Set the target date (01/11/2024)
+                var targetDate = new Date(eventDate);
+                targetDate.setHours(0, 0, 0, 0); // Set time to midnight
+                log.debug('targetDate', targetDate)
+                // Calculate the difference in milliseconds
+                var difference = targetDate.getTime() - currentDate.getTime();
+                log.debug('difference', difference)
+                // Convert the difference from milliseconds to days
+                var differenceInDays = difference / (1000 * 3600 * 24);
+                var eventDateShowBtn = false;
+                var loc;
 
-		log.debug('isIngSum',isIngSum)
-		log.debug('chargeTo',chargeTo)
-        log.debug('hasRequisition',hasRequisition)
-        log.debug('strStatus',strStatus);
-      log.debug('eventDateShowBtn',eventDateShowBtn);
-       log.debug('hasTransferOrder',hasTransferOrder);
+                if (differenceInDays <= 2 && noPax < 50) {
+                    eventDateShowBtn = false;
+                } else if (differenceInDays <= 2 && noPax > 50) {
+                    loc = 3;
+                    eventDateShowBtn = true;
+                } else if (differenceInDays > 2 && noPax > 50) {
+                    eventDateShowBtn = true;
+                } else if (differenceInDays > 2 && noPax < 50) {
+                    eventDateShowBtn = true;
+                }
+            }
+        }
 
-        try{
-            switch(strRecordType) {
+        log.debug('isIngSum', isIngSum)
+        log.debug('chargeTo', chargeTo)
+        log.debug('strStatus', strStatus);
+        log.debug('eventDateShowBtn', eventDateShowBtn);
+        log.debug('differenceInDays', differenceInDays);
+
+        try {
+            switch (strRecordType) {
                 case 'customrecord_costing_sheet': {
-                  
 
-                    if(strStatus == mapping.GLOBAL.status.approved) {
-                          if(chargeTo != 3){
-                            if(hasRequisition === false && isIngSum){
-                                let blnValidator = hideSRPRButton(scriptContext)
-                                if (blnValidator){
-                                    objForm.addButton({
-                                        id: 'custpage_btn_createpr',
-                                        label: 'Create PR',
-                                        functionName: `
-                                            window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
-                                        `
-                                    })
-                                }
-							}
-                          }
-                          else{
-                            if(hasRequisition === false && isIngSum && soShowBtn && eventDateShowBtn){
-                                let blnValidator = hideSRPRButton(scriptContext)
-                                if (blnValidator){
-                                    objForm.addButton({
-                                        id: 'custpage_btn_createpr',
-                                        label: 'Create PR',
-                                        functionName: `
-                                            window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
-                                        `
-                                    })
-                                }
-							}
-                          }
+                    if (strStatus == mapping.GLOBAL.status.approved) {
 
-                            //var chargeTo = recNewRecord.getValue({ fieldId: 'custrecord_charge_to'});
-                            
-                            if(hasTransaction === false /*&& chargeTo === '1'*/){
-                                if(isIngSum && chargeTo == 4){
-								objForm.addButton({
+                        if (isIngSum){
+                            showButton(objForm, soStrArr[0], recNewRecord, intSubsidiary, strSuiteLetConverter, noPax, differenceInDays, beoType, strBanquetType)
+                        }
+                        
+    
+                        if (hasTransaction === false ) {
+                            if (isIngSum && chargeTo == 4) {
+                                objForm.addButton({
                                     id: 'custpage_btn_createso',
                                     label: 'Create SO',
                                     functionName: `
-                                        window.open('${strSuiteLetConverter}&action=createSalesOrder&costingSheet=${recNewRecord.id}', '_self')
-                                    `
+                                    window.open('${strSuiteLetConverter}&action=createSalesOrder&costingSheet=${recNewRecord.id}', '_self')
+                                `
                                 })
-								}
                             }
-                            if(chargeTo != 3){
-                              if(hasTransferOrder === false && isIngSum){
-                                let blnValidator = hideSRButton(scriptContext)
-                                    if (blnValidator){ 
-                                        objForm.addButton({
-                                            id: 'custpage_btn_createsr',
-                                            label: 'Create SR',
-                                            functionName: `
-                                                window.open('${strSuiteLetConverter}&action=createStockRequisition&costingSheet=${recNewRecord.id}', '_self')
-                                            `
-                                        });
-                                    }
-								}    
-                            }
-                            else{
-                              if(hasTransferOrder === false && isIngSum && soShowBtn && eventDateShowBtn){
-                                let blnValidator = hideSRButton(scriptContext)
-                                    if (blnValidator){
-                                        objForm.addButton({
-                                            id: 'custpage_btn_createsr',
-                                            label: 'Create SR',
-                                            functionName: `
-                                                window.open('${strSuiteLetConverter}&action=createStockRequisition&costingSheet=${recNewRecord.id}', '_self')
-                                            `
-                                        });
-                                    }
-								}    
-                            }
-                            
-                            
-                        // }
-                      
+                        }
                     }
-
-                  
-                if(intSubsidiary != '3') {
-
-                    /*objForm.addButton({
-                        id: 'custpage_btn_createia',
-                        label: 'Create IA',
-                        functionName: `
-                            window.open('${strSuiteLetConverter}&action=createInventoryAdjustment&costingSheet=${recNewRecord.id}', '_self')
-                        `
-                    })*/
-               }
 
                     break
                 }
@@ -238,76 +168,120 @@ define([
                         id: 'custpage_btn_createopp',
                         label: 'Create Costing Sheet',
                         functionName: `
-                            window.open('${strSuiteLetConverter}&action=createCostingSheetFromOpportunity&opportunity=${recNewRecord.id}', '_self')
-                        `
+                        window.open('${strSuiteLetConverter}&action=createCostingSheetFromOpportunity&opportunity=${recNewRecord.id}', '_self')
+                    `
                     })
                 }
-                
-                
+
+
             }
-        }catch(objError) {
+        } catch (objError) {
             log.error('ue error catched', objError)
         }
-        
+
     }
 
-    //private function
-    const hideSRButton = (scriptContext) => {
-        let blnValidator = true
-        const recNewRecord = scriptContext.newRecord;
-        const strRecordType = recNewRecord.type;
-        log.debug('hideSRButton strRecordType', strRecordType);
 
-        if (strRecordType == 'customrecord_costing_sheet'){
-            let intLocation = recNewRecord.getValue({
-                fieldId: 'custrecord_tc_costingsheet_location'
-            })
-            log.debug('hideSRButton intLocation', intLocation);
-
-            let strBanquetType = recNewRecord.getValue({
-                fieldId: 'custrecord_trans_banquet_type'
-            })
-            log.debug('hideSRButton intBanquetType', strBanquetType);
-
-            let strBeoType = recNewRecord.getValue({
-                fieldId: 'custrecord_trans_beo_type'
-            })
-            log.debug('hideSRButton strBeoType', strBeoType);
-
-            if (strBeoType == 'CUSTOMIZED'){
-                log.debug('hideSRButton CUSTOMIZED');
-                blnValidator = true
-            } else if (intLocation == 3 && strBanquetType == 'Banquet Type 2'){
-                log.debug('hideSRButton Banquet Type 2');
-                blnValidator = false
+    // private
+    // Event Costing Sheet = Create From SO
+    // Food Tasting = Create From Proposal
+    // beoType 1 = Regular
+    const showButton = (objForm, soStrArr, recNewRecord, intSubsidiary, strSuiteLetConverter, noPax, differenceInDays, beoType, strBanquetType) => {
+        if (soStrArr == 'Proposal'){
+            if (differenceInDays < 3){
+                displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+            } else {
+                if (strBanquetType != "Banquet Type 2"){
+                    displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                    displaySRButton(objForm, recNewRecord, strSuiteLetConverter)
+                } else {
+                    displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                } 
             }
-        }
-
-        return blnValidator
+        } else {
+            if (differenceInDays < 3){
+                if (noPax > 50){
+                    if (strBanquetType != "Banquet Type 2"){
+                        displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                        displaySRButton(objForm, recNewRecord, strSuiteLetConverter)
+                    } else {
+                        displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                    } 
+                } else {
+                    displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                }
+            } else {
+                if (noPax > 50){
+                    if (strBanquetType != "Banquet Type 2"){
+                        displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                        displaySRButton(objForm, recNewRecord, strSuiteLetConverter)
+                    } else {
+                        displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                    }  
+                } else {
+                    if (beoType != 1){ // Customized
+                        if (strBanquetType != "Banquet Type 2"){
+                            displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                            displaySRButton(objForm, recNewRecord, strSuiteLetConverter)
+                        } else {
+                            displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                        }
+                    } else {
+                        displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
+                    }
+                }
+            }
+        } 
     }
+    
 
-    const hideSRPRButton = (scriptContext) => {
-        let blnValidator = false
-        const recNewRecord = scriptContext.newRecord;
-        const strRecordType = recNewRecord.type;
-        log.debug('hideSRPRButton strRecordType', strRecordType);
-
-        if (strRecordType == 'customrecord_costing_sheet'){
-            
-            let strBeoType = recNewRecord.getValue({
-                fieldId: 'custrecord_trans_beo_type'
+    const displayPRButton = (objForm, recNewRecord, intSubsidiary, strSuiteLetConverter) => {
+        let hasRequisition = getRequisition(recNewRecord);
+        if (!hasRequisition){
+            objForm.addButton({
+                id: 'custpage_btn_createpr',
+                label: 'Create PR',
+                functionName: `
+                window.open('${strSuiteLetConverter}&action=createPurchaseRequest&costingSheet=${recNewRecord.id}&subsidiary=${intSubsidiary}', '_self')
+            `
             })
-            log.debug('hideSRButton strBeoType', strBeoType);
-
-            if (strBeoType == 'CUSTOMIZED'){
-                log.debug('hideSRButton CUSTOMIZED');
-                blnValidator = true
-            } 
         }
-
-        return blnValidator
     }
 
-    return {beforeLoad}
+    const displaySRButton = (objForm, recNewRecord, strSuiteLetConverter) => {
+        let hasTransferOrder = getTransferOrder(recNewRecord);
+        if (!hasTransferOrder){
+            objForm.addButton({
+                id: 'custpage_btn_createsr',
+                label: 'Create SR',
+                functionName: `
+                    window.open('${strSuiteLetConverter}&action=createStockRequisition&costingSheet=${recNewRecord.id}', '_self')
+                `
+            });
+        }
+    }
+
+    const getRequisition = (recNewRecord) => {
+        var requisitionRes = query.runSuiteQL({
+            query: `
+            Select id, recordtype from transaction where custbody_related_costing_sheet = ${recNewRecord.id} AND recordtype = 'purchaserequisition'
+        `
+        }).asMappedResults();
+        var hasRequisition = requisitionRes.length > 0 ? true : false;
+        return hasRequisition;
+    }
+
+    const getTransferOrder = (recNewRecord) => {
+        var transferOrderRes = query.runSuiteQL({
+            query: `
+            Select id, recordtype from transaction where custbody_related_costing_sheet = ${recNewRecord.id} AND recordtype = 'transferorder'
+        `
+        }).asMappedResults();
+        var hasTransferOrder = transferOrderRes.length > 0 ? true : false;
+        return hasTransferOrder;
+    }
+    return {
+        beforeLoad
+    }
 
 });

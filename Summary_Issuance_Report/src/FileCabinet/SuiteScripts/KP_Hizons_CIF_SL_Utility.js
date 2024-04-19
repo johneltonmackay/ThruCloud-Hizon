@@ -29,10 +29,10 @@ function(runtime, message, currentRecord, search, record, url, dialog, format, h
         var invAdjId = urlParams.get('invAdjId')
         if(invAdjId){
             
-            var invAdjLink = 'https://8154337.app.netsuite.com/app/accounting/transactions/invadjst.nl?id='+invAdjId;
+            var invAdjLink = 'https://8154337-sb1.app.netsuite.com/app/accounting/transactions/invadjst.nl?id='+invAdjId;
             var fieldLookUp = search.lookupFields({
                 type: search.Type.INVENTORY_ADJUSTMENT,
-                id: 'invAdjId',
+                id: invAdjId,
                 columns: ['tranid']
             });
             var linkText = fieldLookUp.tranid;

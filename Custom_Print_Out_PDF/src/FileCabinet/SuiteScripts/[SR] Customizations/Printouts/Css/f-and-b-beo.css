@@ -1,10 +1,10 @@
 body {
     font-family: Arial, sans-serif;
+    font-size: 12px;
 }
 
 .header {
     align: middle;
-    margin-bottom: 20px;
 }
 
 .content {
@@ -14,9 +14,17 @@ body {
 .top-table {
     width: 100%;
     border-collapse: collapse;
-    border: none;
-    padding-top: 25px;
-    
+    border: 1px solid;
+    margin-top: 20px;
+}
+.top-table-plain {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.top-table td {
+    border: 0px; 
 }
 
 .parent-table {
@@ -48,20 +56,18 @@ body {
 
 
 .header h2 {
-    margin: 0; 
     align: center;
 }
 
 .banquet-heading {
+    margin-top: 70px;
     font-size: 20px;
     font-weight: bold;
-    margin-bottom: 1px;
 }
 
 .client-copy {
     font-size: 18px;
     font-weight: bold;
-    margin-right: 200px;
 }
   
 .tbl-logo {

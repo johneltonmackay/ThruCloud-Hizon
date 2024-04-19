@@ -6,231 +6,228 @@
 	<style type="text/css">
 		{{css}}
 	</style>
- <macrolist>
-    <macro id="nlheader">
-        <table class="tbl-logo">
-            <tr>
-                <td align="left"> <img src="{{bodyfields.logo_catering}}" style="width: 200px; height: 170px;"/> </td>
-            </tr>
-        </table>
-    </macro>
-    </macrolist>
 </head>
-<body header="nlheader" header-height="70px" size="letter">
-
-    <div class="header" align="center">
-        <h2 class="banquet-heading">BANQUET EVENT ORDER</h2>
-        <h2 class="client-copy">CLIENT COPY</h2>
-    </div>
-    <br/>
-
+<body header="nlheader" size="letter">
+    <table class="top-table-plain">
+        <tr>
+            <td align="left"> <img src="{{bodyfields.logo_catering}}" style="width: 200px; height: 170px;"/> </td>
+            <td align="right"> <img src="{{bodyfields.logo_catering}}" style="width: 200px; height: 170px;"/> </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="2"><h2 class="banquet-heading">BANQUET EVENT ORDER</h2></td>
+        </tr>
+    </table>
+    <table class="top-table-plain">
+        <tr>
+            <td>Date Printed</td>
+        </tr>
+        <tr>
+            <td>Document No.</td>
+        </tr>
+    </table>
     <table class="top-table">
         <tr>
-            <th>Prepared Date: {{bodyfields.prepared_date}}</th>
-            <th>Doc. No. {{bodyfields.doc_num}}</th>
+            <td>Event Details</td>
         </tr>
         <tr>
-            <td>Customer: {{bodyfields.customer}}</td>
+            <td>Client Name</td>
+            <td>Contact Details</td>
         </tr>
         <tr>
-            <td>Nature of Function: {{bodyfields.nature_of_function}}</td>
-            <td>Date of Event: {{bodyfields.date_of_event}}</td>
+            <td>Final Contract Date</td>
+            <td>Event Start Time</td>
         </tr>
         <tr>
-            <td>Service Time: {{bodyfields.service_time}}</td>
-            <td>Contact Details: {{bodyfields.contact_details}}</td>
+            <td>Event Date:</td>
+            <td>Food Setup Time</td>
         </tr>
         <tr>
-            <td>Venue: {{bodyfields.venue}}</td>
-            <td>Dispatch Time: {{lookUpfld.custbody_hz_dispatch_time}}</td>
+            <td>Remarks:</td>
+            <td>Event Service Time</td>
         </tr>
         <tr>
-            <td>No. of Pax: {{bodyfields.pax}}</td>
-            <td>Price/Head: PHP {{bodyfields.price_per_head}}</td>
+            <td>Venue:</td>
+            <td>Event End Time</td>
+        </tr>
+        <tr>
+            <td>Total Number of Pax</td>
         </tr>
     </table>
-<div style="padding-top:50px;">
-    <table class="parent-table">
-    <tr>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th><strong>Menu</strong></th>
-                </tr>
-                {{#each sublists.Menu}}
-                    <tr>
-                        <td><strong>{{@key}}</strong></td>
-                    </tr>
-                    {{#each this}}
-                    <tr>
-                        <td>{{item}}</td>
-                    </tr>
-                    {{/each}}
-                    <tr>
-                        <td><br/></td>
-                    </tr>
-                    {{/each}}
-
-                <tr>
-                    <th><strong>Notes:</strong></th>
-                </tr>
-                <tr>
-                    <th><strong>{{bodyfields.fm_notes}}</strong></th>
-                </tr>
-            </table>
-        </td>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th><strong>Bar Requirements</strong></th>
-                </tr>
-                <tr>
-                    <td><br/>{{bodyfields.bar_req}}</td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
-
-<table class="parent-table">
-    <tr>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th><strong>Amenities</strong></th>
-                </tr>
-                
-                {{#each sublists.Amenities}}
-                    <tr>
-                        <td><strong>{{@key}}</strong></td>
-                    </tr>
-                    {{#each this}}
-                    <tr>
-                        <td>{{item}}</td>
-                    </tr>
-                    {{/each}}
-                    <tr>
-                        <td><br/></td>
-                    </tr>
-                    {{/each}}
-            </table>
-        </td>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th><strong>Set-up Requirements</strong></th>
-                </tr>
-                <tr>
-                    <td><br/>{{bodyfields.setup_req}}</td>  
-                </tr>
-                
-            </table>
-        </td>
-    </tr>
-</table>
-
-<table class="parent-table">
- <tr>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th><strong>Flower Design</strong></th>
-                </tr>
-                
-                {{#each sublists.FlowerDesign}}
-                    <tr>
-                        <td><strong>{{@key}}</strong></td>
-                    </tr>
-                    {{#each this}}
-                    <tr>
-                        <td>{{name}}</td>
-                    </tr>
-                    {{/each}}
-                    <tr>
-                        <td><br/></td>
-                    </tr>
-                    {{/each}}
-            </table>
-        </td>
-</tr>
-</table>
-
-<table class="parent-table">
-    <tr>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th><strong>Other charges</strong></th>
-                </tr>
-                <tr>
-                    <td><br/>{{bodyfields.others}}</td>  
-                </tr>
-            </table>
-        </td>
-        <td>
-            <table class="table-in">
-                <tr>
-                    <th colspan="4"><strong>Billing Breakdown</strong></th>
-                </tr>
-            
-                <tr>
-                    <td>Description</td>
-                    <td>Rate</td>
-                    <td>Quantity</td>
-                    <td>Amount</td>  
-                </tr>
-                {{#each sublists.BillableItems}}
-                <tr>
-                    <td>{{itemDisplay}}</td>
-                    <td>{{itemRate}}</td>
-                    <td>{{itemQuantity}}</td>
-                    <td>{{itemAmount}}</td>
-                </tr>
-                {{/each}}
-               
-            </table>
-        </td>
-    </tr>
-</table>
-</div>
-<p></p>
-<p></p>
-<div style="padding-top:50px;">
-<table class="top-table">
+    <table class="top-table">
         <tr>
-            <th><strong>Billing Details</strong></th>
-            <th><strong>Billing Statement</strong></th>
-            <th><strong></strong></th>
+            <td colspan="2">Cost Breakdown</td>
+            <td>No. of Pax</td>
         </tr>
         <tr>
-            <td><span class="check-box">x</span>Bill to client Terms: {{bodyfields.ini_terms}}</td>
-            <td><span class="check-box">x</span>AM Snacks Only</td>
-            <td><span class="check-box">x</span>Lunch Only</td>
+            <td>Base Menu</td>
+            <td></td>
+            <td></td>
         </tr>
         <tr>
-            <td><span class="check-box">x</span>Cash by client</td>
-            <td><span class="check-box">x</span>PM Snacks Only</td>
-            <td><span class="check-box">x</span>Meals Only</td>
+            <td>Add-On</td>
+            <td></td>
+            <td></td>
         </tr>
         <tr>
-            <td><br/>Prepared By:</td>
-            <td><br/>Approved By:</td>
-            <td><br/>Noted By:</td>
+            <td>Amenities</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Total</td>
+            <td></td>
+            <td></td>
         </tr>
     </table>
-
-    <table>
+    <table class="top-table">
         <tr>
-            <td class="signature-line" colspan="3">________________________</td>
-            <td class="signature-line" colspan="3">________________________</td>
-            <td class="signature-line" colspan="3">________________________</td>
-        </tr>
-        <tr>
-            <td class="signature-line" colspan="3">Order Taker / Planner</td>
-            <td class="signature-line" colspan="3">Outlet Manager</td>
-            <td class="signature-line" colspan="3">Operations Manager</td>
+            <td>Set-Up Requirements</td>
         </tr>
     </table>
-</div>
+    <table class="top-table">
+        <tr>
+            <td>Beverage Requirements</td>
+        </tr>
+    </table>
+    <table class="top-table">
+        <tr>
+            <td>Food &amp; Beverage Menu</td>
+        </tr>
+    </table>
+    <table class="top-table-plain">
+        <tr>
+            <td>Prepared by</td>
+            <td>Approved by</td>
+        </tr>
+        <tr>
+            <td>Planner</td>
+            <td>Outlet Manager</td>
+        </tr>
+    </table>
+    <p style="page-break-before: always;"></p>
+    <div align="center">
+        <p align="center"><b><u>CONTRACT <br/> TERMS AND CONDITIONS</u></b></p>
+        <table class="top-table-plain">
+            <tr>
+                <td>
+                <p>
+                - The CLIENT shall pay the agreed contract price for the services rendered.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The CLIENT agrees that if this contract is cancelled at his/her instance or for any reasons whatsoever, any down payment shall be forfeited as penalty.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The CLIENT fully understands that the agreeable number of guests reserved in the contract is final, not subject to reduction. The CLIENT further agrees to pay for all guests in attendance but not less than the number of guaranteed number of guests as stated in this contract.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The CLIENT shall be responsible for the safety and security of all the guests and their personal property. HCRSI shall NOT be responsible for any damage or loss of any merchandise, equipment, clothing, cell phones, gifts, other valuables left in the venue prior to during or after the function. HCRSI is not liable for any damages to the venue caused by his/her guests, and HCRSI is likewise free from any and all liabilities resulting to any loss or damage or injury that may be suffered by any guests, third persons or property prior to, during and after function.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The CLIENT shall pay for the cost of broken, damaged or lost equipment, furniture, fixtures, glassware, utensils whether damaged by the guests or the CLIENT themselves based on the current market price.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The duration of the event shall be limited to 4 from the start of the time indicated in the contract.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The food shall be consumed at the agreed serving time in the contract to avoid spoilage. The CLIENT shall be liable for any spoilage of food due to delay in serving time upon CLIENT's instruction.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - HCRSI further reserves the rights to substitute items that are unavailable in the open market or that exceed reasonable market costs. HCRSI will notify the CLIENT of any such changes if time allows.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - It shall be understood that everything is in order iif the HCRSI does not receive any written complaint from the CLIENT within 48 hours from the end of the function.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - The performance of this agreement by is subject to acts of God such as typhoons, earthquakes, fires, floods, or other disasters, and acts of man such as war, government regulations, strikes, civil disorders, curtailment of transportation facilities, or other emergencies making it inadvisable, illegal or impossible to uphold previous contractual agreements. HCRSI shall have no responsibility or liability for failure to supply any service when prevented from doing so by the occurrence of strikes, accidents, extra ordinary vehicular traffic or any cause beyond HCRSI’s control, or by orders of any governmental authority which may affect normal catering operations.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - HCRSI reserves the right to cancel a function if it has reason to believe that the exact nature of the event varies from the originally agreed upon, whether in writing or given verbally and/ or that the holding of such function may be against the law, public morals or public policy. In such case, the HCRSI shall have the right to forfeit any and all deposit or down payment already received as and by law of penalty and liquidated damages.
+                </p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>
+                - This agreement including the banquet sales order page 1 constitute the entire agreement between the parties. No modifications or cancellation thereof shall be valid, nor if any force and effect unless in writing signed by the caterer. The customer acknowledges that (s) he has read and accepted all the terms of this Catering Services Agreement and has executed this Agreement on ______________ day of _____________, _____________at____________.
+                </p>
+                </td>
+            </tr>
+        </table>
+        <br/>
+        <table class="top-table-plain">
+            <tr>
+                <td colspan="4">
+                <p>If this is acceptable to you, please signify your conformity.</p>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4">
+                <p><b><u>CONFORME</u></b></p>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                <p><b>Client (Customer Name)</b></p>
+                </td>
+                <td colspan="2">
+                <p><b>Hizons Catering and Restaurangt Services Inc</b><br/> HCRSI</p>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                <p>______________________</p>
+                </td>
+                <td>
+                <p>______________________ <br/> Date</p>
+                </td>
+                <td>
+                <p>______________________ <br/> Name of User <br/> <b>Outlet Manager</b></p>
+                </td>
+                <td>
+                <p>______________________ <br/> Date</p>
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 </pdf>

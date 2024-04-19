@@ -39,6 +39,7 @@ define([], function(){;
 
     function fieldChanged(scriptContext) {
       let currentRecord = scriptContext.currentRecord;
+      console.log('scriptContext.fieldId', scriptContext.fieldId)
       if (scriptContext.fieldId == 'custrecord_amenity_cost') {
           let objParam = {
               fieldId: 'custrecord_amenity_cost',
@@ -58,10 +59,12 @@ define([], function(){;
       if (scriptContext.fieldId == 'custrecord_amenity_qty') {
         updateTotalCost(currentRecord)
       }
-
+      
     }
     
     const updateTotalCost = (currentRecord) => {
+        let intTotalCost = 0
+        let intTotalGross = 0
         let intQty = parseFloat(currentRecord.getCurrentSublistValue({
             sublistId: 'recmachcustrecord_amenities_transaction',
             fieldId: 'custrecord_amenity_qty'
@@ -76,20 +79,30 @@ define([], function(){;
             fieldId: 'custrecord_amenities_srp'
         }));
 
-        currentRecord.setCurrentSublistValue({
-            sublistId: 'recmachcustrecord_amenities_transaction',
-            fieldId: 'custrecord_am_total_cost',
-            value: intQty * intPurchasePrice
-        });
+       
+       if (!isNaN(intQty) && !isNaN(intPurchasePrice)) {
+            intTotalCost = intQty * intPurchasePrice
+       }
+       currentRecord.setCurrentSublistValue({
+        sublistId: 'recmachcustrecord_amenities_transaction',
+        fieldId: 'custrecord_am_total_cost',
+        value: intTotalCost
+       });
 
-        currentRecord.setCurrentSublistValue({
-            sublistId: 'recmachcustrecord_amenities_transaction',
-            fieldId: 'custrecord_total_gross_amount',
-            value: intQty * intGrossPrice
-        });
+       if (!isNaN(intQty) && !isNaN(intGrossPrice)) {
+            intTotalGross = intQty * intGrossPrice
+       }
+       currentRecord.setCurrentSublistValue({
+        sublistId: 'recmachcustrecord_amenities_transaction',
+        fieldId: 'custrecord_total_gross_amount',
+        value: intTotalGross
+       });
+    
+     
     }
 
     const calculateTotalCost = (objParam, currentRecord) => {
+        let totalCost = 0
         let fieldValue = parseFloat(currentRecord.getCurrentSublistValue({
             sublistId: 'recmachcustrecord_amenities_transaction',
             fieldId: objParam.fieldId
@@ -102,9 +115,11 @@ define([], function(){;
         }));
         console.log('intQty', intQty);
 
-        let totalCost = fieldValue * intQty;
-        console.log('totalCost', totalCost);
-    
+        // Only update total cost amount if intQty and fieldValue are truthy
+        if (!isNaN(fieldValue) && !isNaN(intQty)){
+            totalCost = fieldValue * intQty;
+            console.log('totalCost', totalCost);
+        }
         currentRecord.setCurrentSublistValue({
             sublistId: 'recmachcustrecord_amenities_transaction',
             fieldId: objParam.totalFieldId,
