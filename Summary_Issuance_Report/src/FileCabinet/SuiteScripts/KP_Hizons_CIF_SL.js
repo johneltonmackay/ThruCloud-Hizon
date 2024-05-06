@@ -29,13 +29,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
          var dateto = context.request.parameters.dateTo;
          var chargeto = context.request.parameters.chargeTo;
          var outlet = context.request.parameters.outlet;
-        
-        
-        /*var isPrinted = form.addField({
-            id: 'custpage_form_printed',
-            type: serverWidget.FieldType.TEXT,
-            label: 'Printed'
-        });*/
 
         var chargeTof = form.addField({
             id: 'custpage_form_chargeto',
@@ -154,10 +147,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             //source: 'location'
         });
 
-        /*outletf.addSelectOption({
-            value : '@NONE@',
-            text : ''
-        });*/
         let arrMultiLocation = []
         let arrOptions = []
         let objRecord = record.load({
@@ -194,15 +183,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             }
         });
         log.debug('objRecord arrOptions',arrOptions)
-
-        // var empSrch = search.lookupFields({
-        //     type: search.Type.EMPLOYEE,
-        //     id: myUser.id,
-        //     columns: 'custentity_multiple_locations'
-        // });
-
-        // log.debug('empSrch',empSrch)
-        // log.debug('length',empSrch.custentity_multiple_locations.length)
 
         for(var e = 0; e < arrOptions.length; e++){
             outletf.addSelectOption({
@@ -244,7 +224,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             label: 'Food Menu',
           });    
           
-         sublist.addMarkAllButtons();
+          sublist.addMarkAllButtons();
        
           // Add columns to the sublist
           var isMark = sublist.addField({
@@ -255,52 +235,14 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
 
           var fmId = sublist.addField({
             id: 'custpage_fm_id',
-            type: serverWidget.FieldType.TEXT,
+            type: serverWidget.FieldType.TEXTAREA,
             label: 'Id'
           });
-        //   fmId.updateDisplayType({
-        //     displayType: serverWidget.FieldDisplayType.HIDDEN
-        //   });
-
-          /*sublist.addField({
-            id: 'custpage_outlet',
-            type: serverWidget.FieldType.TEXT,
-            label: 'Outlet'
-          });
-
-          var outletId = sublist.addField({
-            id: 'custpage_outlet_id',
-            type: serverWidget.FieldType.TEXT,
-            label: 'Outlet'
-          });
-
-          outletId.updateDisplayType({‌
+          fmId.updateDisplayType({
             displayType: serverWidget.FieldDisplayType.HIDDEN
           });
-
-          sublist.addField({
-            id: 'custpage_charge_to',
-            type: serverWidget.FieldType.TEXT,
-            label: 'Charge To'
-          });
-
-          
-          var chargeToId = sublist.addField({
-            id: 'custpage_charge_to_id',
-            type: serverWidget.FieldType.TEXT,
-            label: 'Charge To'
-          });
-
-          chargeToId.updateDisplayType({‌
-            displayType: serverWidget.FieldDisplayType.HIDDEN
-          });
-
-          sublist.addField({
-            id: 'custpage_item_class',
-            type: serverWidget.FieldType.TEXT,
-            label: 'Item Class'
-          });*/
-
+        
+    
           //-----------added by pcl 3-6-2024-----------
           col = sublist.addField({
             id: 'custpage_item_internal',
@@ -378,8 +320,13 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
           qtyStock.updateDisplayType({
             displayType: serverWidget.FieldDisplayType.HIDDEN
           });
-          
 
+          var locOnhand = sublist.addField({
+            id: 'custpage_loc_onhand',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Location On Hand'
+          });
+         
           var retrieveSearch = runSearch(eventname, datefrom, dateto, chargeto, outlet, PAGE_SIZE);
           log.debug('retrieveSearch',retrieveSearch)
           var pageCount = Math.ceil(retrieveSearch.count / PAGE_SIZE);
@@ -389,23 +336,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 pageId = 0;
             else if (pageId >= pageCount)
                 pageId = pageCount - 1;
-
-            // Add buttons to simulate Next & Previous
-            /*if (pageId != 0) {‌
-                form.addButton({‌
-                    id : 'custpage_previous',
-                    label : 'Previous',
-                    functionName : 'getSuiteletPage(' + (pageId - 1) + ',' + partNo + ',' + unitModel + ',' + description +')'
-                });
-            }
-
-            if (pageId != pageCount - 1) {‌
-                form.addButton({‌
-                    id : 'custpage_next',
-                    label : 'Next',
-                    functionName : 'getSuiteletPage(' + (pageId + 1) + ',' + partNo + ',' + unitModel + ',' + description +')'
-                });
-            }*/
 
            var pageField = form.addField({
                     id: 'custpage_form_pagefield',
@@ -446,7 +376,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 log.debug('pageId',pageId)
                 // Get subset of data to be shown on page
                 var searchResults = fetchSearchResult(retrieveSearch, pageId);
-
+                log.debug('searchResults',searchResults)
                 // Set data returned to columns
                 var j = 0;
 
@@ -456,47 +386,9 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                         sublist.setSublistValue({
                             id: 'custpage_fm_id',
                             line: j,
-                            value: result.id
-                        });
-
-                        
-                    }
-
-                    /*if(result.outlet){
-                        sublist.setSublistValue({
-                            id: 'custpage_outlet',
-                            line: j,
-                            value: result.outlet
-                        });
-
-                        sublist.setSublistValue({
-                            id: 'custpage_outlet_id',
-                            line: j,
-                            value: result.outletVal
+                            value: JSON.stringify(result.customIngdtId)
                         });
                     }
-
-                    if(result.chargeto){
-                        sublist.setSublistValue({
-                            id: 'custpage_charge_to',
-                            line: j,
-                            value: result.chargeto
-                        });
-
-                        sublist.setSublistValue({
-                            id: 'custpage_charge_to_id',
-                            line: j,
-                            value: result.chargetoVal
-                        });
-                    }
-                    
-                    if(result.classification){
-                        sublist.setSublistValue({
-                            id: 'custpage_item_class',
-                            line: j,
-                            value: result.classification
-                        });
-                    }*/
 
                     if(result.item){
                         sublist.setSublistValue({
@@ -534,26 +426,14 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                     });
                     
 
-                    /*if(result.totalcost){
-                        sublist.setSublistValue({
-                            id: 'custpage_total_cost',
-                            line: j,
-                            value: result.totalcost
-                        });
-                    }*/
                     let qtyNeededValue = result.qtyNeeded ? result.qtyNeeded : 0;
-                    let formattedQtyNeeded = qtyNeededValue ? Number(qtyNeededValue).toFixed(5) : 0;
+                    let formattedQtyNeeded = qtyNeededValue ? Number(qtyNeededValue).toFixed(2) : 0;
 
                     sublist.setSublistValue({
                         id: 'custpage_qty_needed',
                         line: j,
                         value: formattedQtyNeeded
                     });
-                        /*sublist.setSublistValue({
-                         id: 'custpage_qty_released',
-                            line: j,
-                            value: result.qtyNeeded
-                        });*/
 
                     if(result.unit){
                         sublist.setSublistValue({
@@ -561,12 +441,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                             line: j,
                             value: result.unit
                         });
-                        
-                        /*sublist.setSublistValue({
-                            id: 'custpage_stock_unit_id',
-                            line: j,
-                            value: result.unitVal
-                        });*/
 
                     }
                     
@@ -577,14 +451,14 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                             line: j,
                             value: result.qtyStock
                         });
-                        
-                        /*sublist.setSublistValue({
-                            id: 'custpage_stock_unit_id',
-                            line: j,
-                            value: result.unitVal
-                        });*/
 
                     }
+
+                    sublist.setSublistValue({
+                        id: 'custpage_loc_onhand',
+                        line: j,
+                        value: result.qtyOutletOnHand ? result.qtyOutletOnHand : 0
+                    });
                    
                     j++
                 });
@@ -595,7 +469,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 eventNamef.defaultValue = eventnameArr;
             }
     
-           if (datefrom) {
+            if (datefrom) {
              dateFromf.defaultValue = datefrom;
             }
 
@@ -611,11 +485,8 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 outletf.defaultValue = outlet;
             }
 
-            /*if(eventname || datefrom || dateto || chargeto || outlet){
-                isPrinted.defaultValue = true;
-            }*/
 
-          var button = form.addSubmitButton({
+            var button = form.addSubmitButton({
 	    		label : 'Print'
 	    	})
 
@@ -649,23 +520,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             var item_group = {};
             if(irListCount>0){
                 for(var i=0;i<irListCount;i++){
-                    /*var columnOutlet = context.request.getSublistValue({
-                        group: 'custpage_food_menu_list',
-                        name: 'custpage_outlet',
-                        line: i
-                    });
-                    var columnChargeTo = context.request.getSublistValue({
-                        group: 'custpage_food_menu_list',
-                        name: 'custpage_charge_to',
-                        line: i
-                    });
-                    var columnItemClass = context.request.getSublistValue({
-                        group: 'custpage_food_menu_list',
-                        name: 'custpage_item_class',
-                        line: i
-                    });*/
-
-                    
 
                     var is_check = context.request.getSublistValue({
                         group: 'custpage_food_menu_list',
@@ -739,7 +593,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                         if(fieldLookUp){
                             if(item_group[fieldLookUp['custitem_item_class'][0].text] === undefined){
                                 item_group[fieldLookUp['custitem_item_class'][0].text] = new Array();
-                            }//end if
+                            }
         
                             item_group[fieldLookUp['custitem_item_class'][0].text].push({
                                 
@@ -748,10 +602,10 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                                 "description" : columnItemDescription,
                                 "qty" : columnStockUnit,
                                 "qty_needed" : columnQTYNeeded
-                                //"qty" : qty_arr[0] + (qty_arr.length >= 2? (' / '+qty_arr[1]): '')
+                                
                                 
                             })
-                        }//end if
+                        }
 
                         items.push({
                             "item_internalid" : item_internalid,
@@ -796,79 +650,12 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
 
                 body.items = item_group;
 
-                /*var recsub;
-					recsub 					= lib.loadRecord('subsidiary',subint,false);
-				var logoid 					= lib.catchNull(recsub.getValue({fieldId : 'logo'}));
-				img 						= "";
-				if(logoid != ''){
-					img 		= lib.escapeXML(file.load(logoid).url);
-				}*/
-
                 hcs_template.setHeader(header);
                 hcs_template.setBody(body);
 
                 var xml = hcs_template.get_template();
 
                 context.response.renderPdf({xmlString: xml});
-            
-                /*pdfFile[0] = render.xmlToPdf({
-                    xmlString: xml
-                });
-
-                log.debug('pdfFile',pdfFile[0])
-
-                if (pdfFile[0]) {
-                    context.response.setHeader({
-                        name: 'Content-Type',
-                        value: 'application/pdf'
-                    })
-                    
-                    context.response.addHeader({
-                        name: "Content-Disposition",
-                        value: 'attachment; filename=Summary_of_Issuance_Report.pdf'
-                    })
-                    
-                    context.response.write({output: pdfFile[0].getContents()})
-                */
-                    /*var eventName = context.request.parameters.custpage_form_eventname;   
-                    var dateFrom = context.request.parameters.custpage_form_datefrom;
-                    var dateTo = context.request.parameters.custpage_form_dateto;
-                    var chargeTo = context.request.parameters.custpage_form_chargeto;
-                    var outlet = context.request.parameters.custpage_form_outlet;
-                    var suiteletURL = url.resolveScript({
-                        scriptId: 'customscript_inv_adjustment_cif',
-                        deploymentId: 'customdeploy_inv_adjustment_cif',
-                        params: {
-                            eventName : eventName,
-                            dateFrom : dateFrom,
-                            dateTo : dateTo,
-                            chargeTo : chargeTo,
-                            outlet : outlet
-                        }
-                    });
-                    redirect.redirect({ url: suiteletURL });*/
-
-                    /*pdfFile[0].folder = 1340;
-                    var fileId = pdfFile[0].save();
-                    log.debug('fileId',fileId)
-                    var fileObj = file.load({
-                        id: fileId
-                    });
-                    log.debug('fileObj',fileObj)
-                    var fileName = 'Printed_List.pdf';
-
-                    // Prompt user to download the generated PDF
-                    fileObj.name = fileName;
-                    /*dialog.alert({
-                        title: 'Print List',
-                        message: 'PDF Generated Successfully. Click OK to download the file.'
-                    }).then(function () {
-                        window.location.href = runtime.getCurrentScript().getParameter({
-                            name: 'custscript_suitelet_url'
-                        }) + '&file=' + fileId;
-                    });*/
-                //}
-
 
             }
         }
@@ -892,7 +679,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
         myFilter.push(search.createFilter({
             name: 'custrecord_qty_remaining',
             join: 'custrecord_related_food_menu',
-            operator: search.Operator.NOTLESSTHANOREQUALTO,
+            operator: search.Operator.GREATERTHAN,
             values: 0.01
         }));
 
@@ -903,12 +690,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             values: false
         }));
 
-        /*myFilter.push(search.createFilter({
-            name: 'custrecord_ingdt_c',
-            join: 'custrecord_related_food_menu',
-            operator: search.Operator.NONEOF,
-            values: '@NONE@'
-        }));*/
         log.debug('eventname',eventname)
         log.debug('datefrom',datefrom)
         log.debug('dateto',dateto)
@@ -958,6 +739,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
         var customrecordFoodMenuFbSearchColQTYISSUED = search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
         var customrecordFoodMenuFbSearchColTOTALCOST = search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\'QTY NEEDED*QTY ISSUED\'' });
         //var customrecord_food_menu_fbSearchColExternalId = search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
+        var customrecordFoodMenuFbSearchColOutlet = search.createColumn({ name: 'custrecord_fm_outlet', summary: search.Summary.GROUP });
         var customrecord_food_menu_fbSearch = search.create({
           type: 'customrecord_food_menu_fb',
           filters: myFilter,
@@ -971,6 +753,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             customrecordFoodMenuFbSearchColQTYISSUED,
             customrecordFoodMenuFbSearchColTOTALCOST,
             //customrecord_food_menu_fbSearchColExternalId,
+            customrecordFoodMenuFbSearchColOutlet
           ],
         });
 
@@ -994,6 +777,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
 
         searchPage.data.forEach(function (result) {
             var internalId = result.id;
+            var customrecord_food_menu_outlet = result.getText({ name: 'custrecord_fm_outlet', summary: search.Summary.GROUP });
             var customrecord_food_menu_fbSearchColId = result.getValue({ name: 'internalid', join: 'CUSTRECORD_RELATED_FOOD_MENU', summary: search.Summary.GROUP });
             var custrecordRelatedFoodMenuITEMINTERNAL = result.getValue({ name: 'custrecord_ingdt_c', join: 'custrecord_related_food_menu', summary: search.Summary.GROUP, sort: search.Sort.ASC }); //added by pcl 3-6-2024
             var custrecordRelatedFoodMenuITEMCODE = result.getText({ name: 'custrecord_ingdt_c', join: 'custrecord_related_food_menu', summary: search.Summary.GROUP, sort: search.Sort.ASC });
@@ -1002,58 +786,71 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             var custrecordRelatedFoodMenuUNITOFMEASURESTR = result.getText({ name: 'custrecord_uom_c_stock', join: 'custrecord_related_food_menu', summary: search.Summary.GROUP });
             var custrecordRelatedFoodMenuUnitPrice = result.getValue({ name: 'custrecord_customunit', join: 'custrecord_related_food_menu', summary: search.Summary.MAX });
             var custrecordRelatedFoodMenuQTYNEEDED = result.getValue({ name: 'custrecord_qty_remaining', join: 'custrecord_related_food_menu', summary: search.Summary.SUM });
-            var qtyissued = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
-            //var customrecordFoodMenuFbSearchColQTYISSUED = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
-            //var totalcost = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\'QTY NEEDED*QTY ISSUED\'' });
-
-            /*var customrecord_food_menu_fbSearchColId = result.getValue({ name: 'internalid', join: 'CUSTRECORD_RELATED_FOOD_MENU', summary: search.Summary.GROUP });
-        
-            var customrecord_food_menu_fbSearchColOutletSTR = result.getText({ name: 'custrecord_tc_costingsheet_location', join: 'CUSTRECORD_RELATED_TOPSHEET', summary: search.Summary.GROUP, sort: search.Sort.ASC });
-            var customrecord_food_menu_fbSearchColOutlet = result.getValue({ name: 'custrecord_tc_costingsheet_location', join: 'CUSTRECORD_RELATED_TOPSHEET', summary: search.Summary.GROUP, sort: search.Sort.ASC });
-            var customrecord_food_menu_fbSearchColChargeToSTR = result.getText({ name: 'custrecord_charge_to', join: 'CUSTRECORD_RELATED_TOPSHEET', summary: search.Summary.GROUP });
-            var customrecord_food_menu_fbSearchColChargeTo = result.getValue({ name: 'custrecord_charge_to', join: 'CUSTRECORD_RELATED_TOPSHEET', summary: search.Summary.GROUP });
+            // var qtyissued = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
+            var qtyissued = result.getValue({ name: 'custrecord_qty_issued', join: 'custrecord_related_food_menu', summary: search.Summary.SUM });
             
-            var customrecord_food_menu_fbSearchColItemClassification = result.getValue(search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '{custrecord_related_food_menu.custrecord_item_class}' }));
-            var customrecord_food_menu_fbSearchColItem = result.getValue(search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '{custrecord_related_food_menu.custrecord_ingdt_c}|| \' \' ||{custrecord_related_food_menu.custrecord_customrecipedescription}' }));
-            var customrecord_food_menu_fbSearchColTotalQtyNeeded = result.getValue({ name: 'custrecord_qty_c_stock', join: 'custrecord_related_food_menu', summary: search.Summary.SUM });
-            var customrecord_food_menu_fbSearchColUomSTR = result.getText({ name: 'custrecord_uom_c_stock', join: 'CUSTRECORD_RELATED_FOOD_MENU', summary: search.Summary.GROUP });
-            var customrecord_food_menu_fbSearchColUom = result.getValue({ name: 'custrecord_uom_c_stock', join: 'CUSTRECORD_RELATED_FOOD_MENU', summary: search.Summary.GROUP });
-            
-            var customrecord_food_menu_fbSearchColReleaseDate = result.getValue({ name: 'formuladate', summary: search.Summary.GROUP, formula: '{today}' });
-            var customrecord_food_menu_fbSearchColQtyToBeReleased = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });*/
-            //var customrecord_food_menu_fbSearchColExternalId = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
-            if (parseFloat(custrecordRelatedFoodMenuQTYNEEDED) >= 0.01){
-                fmResults.push({
-                    "id": customrecord_food_menu_fbSearchColId,
-                    /*"outlet": customrecord_food_menu_fbSearchColOutletSTR,
-                    "outletVal": customrecord_food_menu_fbSearchColOutlet,
-                    "chargeto": customrecord_food_menu_fbSearchColChargeToSTR,
-                    "chargetoVal": customrecord_food_menu_fbSearchColChargeTo,
-                    "classification": customrecord_food_menu_fbSearchColItemClassification,*/
-                    "item_internalid" : custrecordRelatedFoodMenuITEMINTERNAL, //added by pcl 3-4-2024
-                    "item": custrecordRelatedFoodMenuITEMCODE,
-                    "description": custrecordRelatedFoodMenuITEMDESCRIPTION,
-                    "qtyNeeded": custrecordRelatedFoodMenuQTYNEEDED,
-                    "unit": custrecordRelatedFoodMenuUNITOFMEASURESTR,
-                    "price": custrecordRelatedFoodMenuUnitPrice,
-                    "qtyStock": qtyissued
-                    //"unitVal": customrecord_food_menu_fbSearchColUom,
-                    //"totalcost": totalcost
-                    //"qtyReleased": customrecord_food_menu_fbSearchColQtyToBeReleased,
-                    //"externalId": customrecord_food_menu_fbSearchColExternalId
-                });
-            }    
+            fmResults.push({
+                "id": customrecord_food_menu_fbSearchColId,
+                "item": custrecordRelatedFoodMenuITEMCODE,
+                "description": custrecordRelatedFoodMenuITEMDESCRIPTION,
+                "qtyNeeded": custrecordRelatedFoodMenuQTYNEEDED,
+                "unit": custrecordRelatedFoodMenuUNITOFMEASURESTR,
+                "price": custrecordRelatedFoodMenuUnitPrice,
+                "qtyStock": qtyissued,
+                "outlet": customrecord_food_menu_outlet,
+                "item_internalid" : custrecordRelatedFoodMenuITEMINTERNAL,
+            }); 
+                
         })
         let consolidatedResults = consolidateData(fmResults)
         return consolidatedResults;
     }
 
+    function getLocQtyOnHand() {
+        let arrLocationOnhand = []
+        var itemSearchColItemId = search.createColumn({ name: 'itemid', sort: search.Sort.ASC });
+        var itemSearchColDisplayName = search.createColumn({ name: 'displayname' });
+        var itemSearchColOutletAverageCost = search.createColumn({ name: 'locationaveragecost' });
+        var itemSearchColInventoryOutlet = search.createColumn({ name: 'inventorylocation' });
+        var itemSearchColOutletOnHand = search.createColumn({ name: 'locationquantityonhand' });
+        var itemSearch = search.create({
+            type: 'item',
+            filters: [
+                ['type', 'anyof', 'InvtPart', 'Assembly'],
+            ],
+            columns: [
+                itemSearchColItemId,
+                itemSearchColDisplayName,
+                itemSearchColOutletAverageCost,
+                itemSearchColInventoryOutlet,
+                itemSearchColOutletOnHand,
+            ],
+        });
+        
+        var itemSearchPagedData = itemSearch.runPaged({ pageSize: 1000 });
+        for (var x = 0; x < itemSearchPagedData.pageRanges.length; x++) {
+            var itemSearchPage = itemSearchPagedData.fetch({ index: x });
+            itemSearchPage.data.forEach(function (result){
+                arrLocationOnhand.push({
+                    itemId: result.getValue(itemSearchColItemId),
+                    displayName: result.getValue(itemSearchColDisplayName),
+                    outletAverageCost: result.getValue(itemSearchColOutletAverageCost),
+                    inventoryOutlet: result.getText(itemSearchColInventoryOutlet),
+                    qtyOutletOnHand: result.getValue(itemSearchColOutletOnHand)
+                })
+            });
+        }
+        log.debug('arrLocationOnhand', arrLocationOnhand);
+        return arrLocationOnhand
+    }
+
     function consolidateData(arrConsolidatedResults) {
+        let arrLocationOnhandData = getLocQtyOnHand()
         let consolidatedData = {};
     
         // Iterate through the original array
         arrConsolidatedResults.forEach((item) => {
-            let key = item.item_internalid; // Using the item_internalid directly as the key
+            let key = item.item; // Using the item_internalid directly as the key
     
             let intQuantity = item.qtyNeeded ? parseFloat(item.qtyNeeded) : 0.00;
             let floatPrice = item.price ? parseFloat(item.price) : 0.00; // Parse price to float
@@ -1062,16 +859,37 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             if (consolidatedData[key]) {
                 // If the key already exists, update the values accordingly
                 consolidatedData[key].qtyNeeded += parseFloat(intQuantity);
+                consolidatedData[key].customIngdtId.push(item.id); 
             } else {
                 // If the key doesn't exist, add a new entry with the current item
-                consolidatedData[key] = { ...item };
-                consolidatedData[key].qtyNeeded = parseFloat(intQuantity);
-                consolidatedData[key].price = floatPrice;
+                consolidatedData[key] = {
+                    ...item,
+                    qtyNeeded: intQuantity,
+                    price: floatPrice,
+                    customIngdtId: [item.id] // Initialize with current id in an array
+                };
             }
         });
-    
+
+        log.debug('consolidateData consolidatedData', consolidatedData);
         // Convert consolidatedData object into an array
         let arrResults = Object.values(consolidatedData);
+
+        arrResults.forEach(result => {
+            // Initialize a new property in the result object for the quantity
+            result.qtyOutletOnHand = 0;
+        
+            // Find matching elements in arrLocationOnhandData
+            arrLocationOnhandData.forEach(locationData => {
+                if (locationData.itemId === result.item && locationData.inventoryOutlet === result.outlet) {
+                    // Assuming you want to sum up all matching quantities
+                    result.qtyOutletOnHand += parseFloat(locationData.qtyOutletOnHand);
+                }
+            });
+        });
+        
+        log.debug('added qtyOutletOnHand arrResults', arrResults); // Now arrResults includes the qtyOutletOnHand for each item and outlet
+        
     
         // Log and return the results
         log.debug('consolidateData arrResults', arrResults);
