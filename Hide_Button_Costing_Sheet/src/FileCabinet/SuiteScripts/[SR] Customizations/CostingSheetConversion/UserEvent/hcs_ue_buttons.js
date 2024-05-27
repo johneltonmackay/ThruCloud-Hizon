@@ -17,7 +17,7 @@ define([
         const objForm = scriptContext.form;
         const strSuiteLetConverter = '/app/site/hosting/scriptlet.nl?script=customscript_hcs_costingsheetconverte_sl&deploy=customdeploy_hcs_costingsheetconverte_sl'
 
-        const strStatus = recNewRecord.getValue({
+        let strStatus = recNewRecord.getValue({
             fieldId: 'custrecord_status'
         })
         const intSubsidiary = recNewRecord.getValue({
@@ -136,7 +136,11 @@ define([
         log.debug('strStatus', strStatus);
         log.debug('eventDateShowBtn', eventDateShowBtn);
         log.debug('differenceInDays', differenceInDays);
-
+        if (chargeTo != 4 && chargeTo != 26 && chargeTo){
+            strStatus = recNewRecord.getValue({
+                fieldId: 'custrecord_bqt_calendar_status'
+            })
+        }
         try {
             switch (strRecordType) {
                 case 'customrecord_costing_sheet': {
@@ -144,6 +148,7 @@ define([
                     if (strStatus == mapping.GLOBAL.status.approved) {
 
                         if (isIngSum){
+                            log.debug('showButton Triggered')
                             showButton(objForm, soStrArr[0], recNewRecord, intSubsidiary, strSuiteLetConverter, noPax, differenceInDays, beoType, strBanquetType)
                         }
                         
@@ -198,7 +203,13 @@ define([
                     displayPRButton(objForm, recNewRecord, intSubsidiary, strSuiteLetConverter)
                 } 
             }
+            log.debug('Proposal differenceInDays', differenceInDays)
+            log.debug('Proposal strBanquetType', strBanquetType)
         } else {
+            log.debug('Transaction differenceInDays', differenceInDays)
+            log.debug('Transaction strBanquetType', strBanquetType)
+            log.debug('Transaction noPax', noPax)
+            log.debug('Transaction beoType', beoType)
             if (differenceInDays < 3){
                 if (noPax > 50){
                     if (strBanquetType != "Banquet Type 2"){
@@ -237,7 +248,8 @@ define([
 
     const displayPRButton = (objForm, recNewRecord, intSubsidiary, strSuiteLetConverter) => {
         let hasRequisition = getRequisition(recNewRecord);
-        if (!hasRequisition){
+        let sourceIngSummaryInProgress = isSourceIngredintSummaryMRInProgress(recNewRecord);
+        if (!hasRequisition && !sourceIngSummaryInProgress){
             objForm.addButton({
                 id: 'custpage_btn_createpr',
                 label: 'Create PR',
@@ -250,7 +262,8 @@ define([
 
     const displaySRButton = (objForm, recNewRecord, strSuiteLetConverter) => {
         let hasTransferOrder = getTransferOrder(recNewRecord);
-        if (!hasTransferOrder){
+        let sourceIngSummaryInProgress = isSourceIngredintSummaryMRInProgress(recNewRecord);
+        if (!hasTransferOrder && !sourceIngSummaryInProgress){
             objForm.addButton({
                 id: 'custpage_btn_createsr',
                 label: 'Create SR',
@@ -268,6 +281,7 @@ define([
         `
         }).asMappedResults();
         var hasRequisition = requisitionRes.length > 0 ? true : false;
+        log.debug('hasRequisition', hasRequisition)
         return hasRequisition;
     }
 
@@ -278,8 +292,22 @@ define([
         `
         }).asMappedResults();
         var hasTransferOrder = transferOrderRes.length > 0 ? true : false;
+        log.debug('hasTransferOrder', hasTransferOrder)
         return hasTransferOrder;
     }
+
+    const isSourceIngredintSummaryMRInProgress = (recNewRecord) => {
+        const isInProgress = recNewRecord.getValue({
+            fieldId: 'custrecord_cs_src_ing_mr_in_progress'
+        });
+
+        if(isInProgress == true || isInProgress == 'T'){
+            return true;
+        }else{
+            return false;
+        }
+    }
+    
     return {
         beforeLoad
     }

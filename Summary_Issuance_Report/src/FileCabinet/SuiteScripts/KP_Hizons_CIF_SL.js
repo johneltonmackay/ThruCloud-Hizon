@@ -119,8 +119,8 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 customrecordCostingSheetSearchPage.data.forEach(function (result){
                     var internalId = result.getValue(customrecordCostingSheetSearchColInternalId);
                     var RecName = result.getText(customrecordCostingSheetSearchColName);
-                    // log.debug('internalId',internalId)
-                    // log.debug('RecName',RecName)
+                    log.debug('internalId',internalId)
+                    log.debug('RecName',RecName)
                     if (!checkExisting.includes(RecName)){
                         checkExisting.push(RecName)
                         eventNamef.addSelectOption({
@@ -252,6 +252,12 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
           });
           col.updateDisplayType({displayType: serverWidget.FieldDisplayType.HIDDEN});
           //-----------added by pcl 3-6-2024-----------
+
+          sublist.addField({
+            id: 'custpage_event_name',
+            type: serverWidget.FieldType.TEXT,
+            label: 'Event Name'
+          });
 
           sublist.addField({
             id: 'custpage_item',
@@ -406,6 +412,14 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                             value: result.item_internalid
                         });
                         //-----------added by pcl 3-6-2024-----------
+                    }
+
+                    if(result.eventName){
+                        sublist.setSublistValue({
+                            id: 'custpage_event_name',
+                            line: j,
+                            value: result.eventName
+                        });
                     }
 
                     if(result.description){
@@ -668,13 +682,23 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
 
     function runSearch(eventname, datefrom, dateto, chargeto, outlet, searchPageSize) {
         var myFilter = [];
+
+        if (chargeto == 3 || chargeto == 26){ // BANQUET or RESTAURANT
+            myFilter.push(search.createFilter({
+                name: 'custrecord_bqt_calendar_status',
+                join: 'custrecord_related_topsheet',
+                operator: search.Operator.ANYOF,
+                values: 2
+            }));
+        } else {
+            myFilter.push(search.createFilter({
+                name: 'custrecord_status',
+                join: 'custrecord_related_topsheet',
+                operator: search.Operator.ANYOF,
+                values: 2
+            }));
+        }
         
-        myFilter.push(search.createFilter({
-            name: 'custrecord_status',
-            join: 'custrecord_related_topsheet',
-            operator: search.Operator.ANYOF,
-            values: 2
-        }));
 
         myFilter.push(search.createFilter({
             name: 'custrecord_qty_remaining',
@@ -690,17 +714,38 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             values: false
         }));
 
-        log.debug('eventname',eventname)
+        let arrEventName = []
+        if (eventname){
+            if (eventname.includes(',')){
+                arrEventName = eventname.split(',')
+            } else {
+                arrEventName.push(eventname)
+            }
+        }
+        log.debug('Search arrEventName',arrEventName)
         log.debug('datefrom',datefrom)
         log.debug('dateto',dateto)
         log.debug('chargeto',chargeto)
         log.debug('outlet',outlet)
+        let additionalFilter = [];
         if(eventname){
-            myFilter.push(search.createFilter({
-                name: 'custrecord_related_topsheet',
-                operator: search.Operator.ANYOF,
-                values: eventname
-            }));
+            if (arrEventName.length == 1){
+                myFilter.push(search.createFilter({
+                    name: 'name',
+                    join: 'custrecord_related_topsheet',
+                    operator: search.Operator.IS,
+                    values: arrEventName[0]
+                }));
+            } else {
+                for (let x = 0; x < arrEventName.length; x++) {
+                    additionalFilter.push(['custrecord_related_topsheet.name', 'is', arrEventName[x]]);
+                    if (x < arrEventName.length - 1) {
+                        additionalFilter.push('OR');
+                    }
+                }
+                // Wrap the additionalFilter in an array and push it to myFilter
+                log.debug('additionalFilter', additionalFilter)
+            }
         }
 
         if(datefrom && dateto){
@@ -728,8 +773,17 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 values: outlet
             }));
         }
-
-        log.debug('myFilter',myFilter)
+        // let customFilter
+        // if (arrEventName.length > 1){
+        //     customFilter = [
+        //         myFilter,
+        //         'AND',
+        //         additionalFilter
+        //     ]
+        // } else {
+        // }
+        customFilter = myFilter
+        log.debug('customFilter', customFilter)
         var customrecordFoodMenuFbSearchColCustrecordRelatedFoodMenuID = search.createColumn({ name: 'internalid', join: 'CUSTRECORD_RELATED_FOOD_MENU', summary: search.Summary.GROUP});
         var customrecordFoodMenuFbSearchColCustrecordRelatedFoodMenuITEMCODE = search.createColumn({ name: 'custrecord_ingdt_c', join: 'custrecord_related_food_menu', summary: search.Summary.GROUP, sort: search.Sort.ASC });
         var customrecordFoodMenuFbSearchColCustrecordRelatedFoodMenuITEMDESCRIPTION = search.createColumn({ name: 'custrecord_customrecipedescription', join: 'custrecord_related_food_menu', summary: search.Summary.GROUP });
@@ -740,9 +794,11 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
         var customrecordFoodMenuFbSearchColTOTALCOST = search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\'QTY NEEDED*QTY ISSUED\'' });
         //var customrecord_food_menu_fbSearchColExternalId = search.createColumn({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
         var customrecordFoodMenuFbSearchColOutlet = search.createColumn({ name: 'custrecord_fm_outlet', summary: search.Summary.GROUP });
+        var customrecordFoodMenuFbSearchColCustrecordRelatedTopsheetName = search.createColumn({ name: 'name', join: 'custrecord_related_topsheet', summary: search.Summary.GROUP });
+
         var customrecord_food_menu_fbSearch = search.create({
           type: 'customrecord_food_menu_fb',
-          filters: myFilter,
+          filters: customFilter,
           columns: [
             customrecordFoodMenuFbSearchColCustrecordRelatedFoodMenuID,
             customrecordFoodMenuFbSearchColCustrecordRelatedFoodMenuITEMCODE,
@@ -753,7 +809,8 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             customrecordFoodMenuFbSearchColQTYISSUED,
             customrecordFoodMenuFbSearchColTOTALCOST,
             //customrecord_food_menu_fbSearchColExternalId,
-            customrecordFoodMenuFbSearchColOutlet
+            customrecordFoodMenuFbSearchColOutlet,
+            customrecordFoodMenuFbSearchColCustrecordRelatedTopsheetName
           ],
         });
 
@@ -788,6 +845,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
             var custrecordRelatedFoodMenuQTYNEEDED = result.getValue({ name: 'custrecord_qty_remaining', join: 'custrecord_related_food_menu', summary: search.Summary.SUM });
             // var qtyissued = result.getValue({ name: 'formulatext', summary: search.Summary.GROUP, formula: '\' \'' });
             var qtyissued = result.getValue({ name: 'custrecord_qty_issued', join: 'custrecord_related_food_menu', summary: search.Summary.SUM });
+            var custrecordFoodMenuFbSearchColCustrecordRelatedTopsheetName = result.getValue({ name: 'name', join: 'custrecord_related_topsheet', summary: search.Summary.GROUP });
             
             fmResults.push({
                 "id": customrecord_food_menu_fbSearchColId,
@@ -799,6 +857,7 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
                 "qtyStock": qtyissued,
                 "outlet": customrecord_food_menu_outlet,
                 "item_internalid" : custrecordRelatedFoodMenuITEMINTERNAL,
+                "eventName": custrecordFoodMenuFbSearchColCustrecordRelatedTopsheetName
             }); 
                 
         })
@@ -895,12 +954,6 @@ function(record, search, runtime, serverWidget, format, url, redirect, file, ren
         log.debug('consolidateData arrResults', arrResults);
         return arrResults;
     }
-    
-    
-    
-    
-    
-    
 
 });
   

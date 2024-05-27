@@ -111,10 +111,15 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
                 let intAddOn = currentRecord.getValue({
                     fieldId: scriptContext.fieldId
                 })
-                arrAddOnData.push({
-                    fieldId: scriptContext.fieldId,
-                    value: intAddOn
-                })
+                if (intAddOn){
+                    arrAddOnData.push({
+                        fieldId: scriptContext.fieldId,
+                        value: intAddOn
+                    })
+                } else {
+                    updateNullAddOn(scriptContext.fieldId, currentRecord)
+                }
+
             } else {
                 let arrAddonFields = getAllAddOns(currentRecord)
                 console.log('processAddOns: arrAddonFields', arrAddonFields)
@@ -221,7 +226,45 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
                 // Add more cases if needed
                 default:
                     // Handle default case if necessary
-                    
+            }
+        }
+
+        const updateNullAddOn = (paramFieldId, currentRecord) => {
+            console.log('updateNullAddOn: paramFieldId', paramFieldId)
+
+            if (paramFieldId) {
+                let intProposedPrice = 0.00;
+                let intNetPrice = 0.00;
+
+                switch (paramFieldId) {
+                    case "custbody_final_menu_addon_1":
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_amount_addon_1', value:intProposedPrice });
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_nett_addon_1', value:intNetPrice });  
+                        break;
+                    case "custbody_final_menu_addon_2":
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_amount_addon_2', value:intProposedPrice });
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_nett_addon_2', value:intNetPrice });  
+                        break;
+                    case "custbody_final_menu_addon_3":
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_amount_addon_3', value:intProposedPrice });
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_nett_addon_3', value:intNetPrice });  
+                        break;
+                    case "custbody_final_menu_addon_4":
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_amount_addon_4', value:intProposedPrice });
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_nett_addon_4', value:intNetPrice });  
+                        break;
+                    case "custbody_final_menu_addon_5":
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_amount_addon_5', value:intProposedPrice });
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_nett_addon_5', value:intNetPrice });  
+                        break;
+                    case "custbody_final_menu_addon_6":
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_amount_addon_6', value:intProposedPrice });
+                        currentRecord.setValue({ fieldId:'custbody_final_menu_nett_addon_6', value:intNetPrice });  
+                        break;
+                    // Add more cases if needed
+                    default:
+                        // Handle default case if necessary
+                }
             }
         }
 
@@ -376,6 +419,7 @@ define(['N/currentRecord', "../Mapping/proposal_final_menu_mapping.js"],
         }
 
         const getAddOnFields = (objRawData) => {
+            console.log('getAddOnFields: objRawData', objRawData);
             let objFieldIds = {};
             let intAddOn = parseInt(objRawData.add_on);
             switch (intAddOn) {

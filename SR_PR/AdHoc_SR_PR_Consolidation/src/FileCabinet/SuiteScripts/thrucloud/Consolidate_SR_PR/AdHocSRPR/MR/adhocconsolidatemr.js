@@ -14,6 +14,7 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
             LOCATION: 'location',
             ORDER_STATUS: 'orderstatus',
             TO_LOCATION: 'transferlocation',
+            TO_SUBSIDIARY: 'tosubsidiary',
             SUBSIDIARY_NAME: 'subsidiary',
             SUBLIST_NAME: 'item',
             QUANTITY: 'quantity',
@@ -51,23 +52,54 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
         const map = (mapContext) => {
             log.debug('map : mapContext', mapContext);
             let objMapValue = JSON.parse(mapContext.value)
+            log.debug('map : objMapValue.recType', objMapValue.recType);
             try {
+
                 var recPROjb = record.create({
                     type: objMapValue.recType,
                     isDynamic: true,
                 });
+   
+                if (objMapValue.recType == 'intercompanytransferorder'){
+                    recPROjb.setValue({
+                        fieldId: STATIC_DATA.TO_SUBSIDIARY,
+                        value: 4 // Earth Kitchen
+                    });
+                    recPROjb.setValue({
+                        fieldId: STATIC_DATA.SUBSIDIARY_NAME,
+                        value: STATIC_DATA.SUBSIDIARY
+                    });
+                } else {
+                    recPROjb.setValue({
+                        fieldId: STATIC_DATA.SUBSIDIARY_NAME,
+                        value: STATIC_DATA.SUBSIDIARY
+                    });
+                }
 
-                recPROjb.setValue({
-                    fieldId: STATIC_DATA.SUBSIDIARY_NAME,
-                    value: STATIC_DATA.SUBSIDIARY
-                });
-
-                recPROjb.setText({
-                    fieldId: STATIC_DATA.LOCATION,
-                    text: objMapValue.location
-                });
-
-                if (objMapValue.recType == 'transferorder'){
+                if (objMapValue.recType == 'intercompanytransferorder'){
+                    log.debug("if")
+                    recPROjb.setText({
+                        fieldId: STATIC_DATA.LOCATION,
+                        text: objMapValue.location
+                    }); 
+                    recPROjb.setValue({
+                        fieldId: STATIC_DATA.TO_LOCATION,
+                        value: 4 // Earth Kitchen
+                    });
+                    recPROjb.setValue({
+                        fieldId: STATIC_DATA.INCOTERM,
+                        value: 1
+                    })
+                    recPROjb.setValue({
+                        fieldId: STATIC_DATA.ORDER_STATUS,
+                        value: 'B' // PENDING FULFILLMENT
+                    })
+                } else if (objMapValue.recType == 'transferorder'){
+                    log.debug("else if")
+                    recPROjb.setText({
+                        fieldId: STATIC_DATA.LOCATION,
+                        text: objMapValue.location
+                    });    
                     recPROjb.setText({
                         fieldId: STATIC_DATA.TO_LOCATION,
                         text: objMapValue.transferlocation
@@ -81,6 +113,12 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
                         fieldId: STATIC_DATA.ORDER_STATUS,
                         value: 'B' // PENDING FULFILLMENT
                     })
+                } else {
+                    log.debug("else")
+                    recPROjb.setText({
+                        fieldId: STATIC_DATA.LOCATION,
+                        text: objMapValue.location
+                    });
                 }
 
                 recPROjb.setValue({
@@ -97,11 +135,21 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
                     recPROjb.selectNewLine({
                         sublistId: STATIC_DATA.SUBLIST_NAME
                     });
-                    recPROjb.setCurrentSublistText({
-                        sublistId: STATIC_DATA.SUBLIST_NAME,
-                        fieldId: STATIC_DATA.SUBLIST_NAME,
-                        text: objMapValue.data[x].Item
-                    });
+                    
+                    if (objMapValue.recType == 'intercompanytransferorder'){
+                        recPROjb.setCurrentSublistValue({
+                            sublistId: STATIC_DATA.SUBLIST_NAME,
+                            fieldId: STATIC_DATA.SUBLIST_NAME,
+                            value: objMapValue.data[x]['Internal ID']
+                        });
+                    } else {
+                        recPROjb.setCurrentSublistText({
+                            sublistId: STATIC_DATA.SUBLIST_NAME,
+                            fieldId: STATIC_DATA.SUBLIST_NAME,
+                            text: objMapValue.data[x].Item
+                        });
+                    }
+
                     recPROjb.setCurrentSublistValue({
                         sublistId: STATIC_DATA.SUBLIST_NAME,
                         fieldId: STATIC_DATA.QUANTITY,
@@ -113,7 +161,7 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
                         value: objMapValue.data[x].Units
                     });
 
-                    if (objMapValue.recType == 'transferorder'){
+                    if (objMapValue.recType == 'transferorder' || objMapValue.recType == 'intercompanytransferorder'){
                         recPROjb.setCurrentSublistValue({
                             sublistId: 'item',
                             fieldId: 'amount',
@@ -372,7 +420,7 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
                 let recordtype = item.recordtype;
                 let transferlocation = "";
 
-                if (recordtype == 'transferorder'){
+                if (recordtype == 'transferorder' || recordtype == 'intercompanytransferorder'){
                     transferlocation = item.transferlocation;
                 }
 
