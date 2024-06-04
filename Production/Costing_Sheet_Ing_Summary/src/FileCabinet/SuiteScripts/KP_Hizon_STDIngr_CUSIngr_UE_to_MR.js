@@ -143,8 +143,8 @@
                         try{
                             var currRecObj = record.load({
                                 type: 'customrecord_food_menu_fb',
-                                id: idNo
-                                //isDynamic: true,
+                                id: idNo,
+                                isDynamic: true,
                             });
             
                             currRecObj.setValue({
@@ -188,7 +188,8 @@
                                     var quantity = result.getValue({ name: 'custrecord_recipe_ingredients_quantity' });
                                     var cusQuantity = (quantity / frFieldNoPax) * updatePax;
                                     var itemSearchColOutletAverageCost = search.createColumn({ name: 'locationaveragecost' });
-                            
+                                    var itemClassMarkUpColumn = search.createColumn({ name: 'custrecord_itemclass_markup', join: 'custitem_item_class'});
+                                  
                                     var itemSearch = search.create({
                                         type: 'item',
                                         filters: [
@@ -200,9 +201,11 @@
                                         ],
                                         columns: [
                                             itemSearchColOutletAverageCost,
+                                            itemClassMarkUpColumn
                                         ],
                                     });
                                     var locAveCost;
+                                    var itemClassMarkUp;
                                     var searchResultsItem = itemSearch.run().getRange({
                                         start: 0,
                                         end: 1 // Adjust the number of results you want to fetch
@@ -210,6 +213,7 @@
                                     if(searchResultsItem.length > 0){
                                         //for (var z = 0; z < searchResultsItem.length; z++) {
                                         locAveCost = searchResultsItem[0].getValue({ name: 'locationaveragecost' }); 
+                                        itemClassMarkUp = searchResultsItem[0].getValue({ name: 'custrecord_itemclass_markup', join: 'custitem_item_class'}); 
                                         //}
                                     }
 
@@ -227,13 +231,14 @@
                                         "aveCost" : custrecordRecipeIngredientsItemcodeAverageCost,
                                         "stockUnit" : custrecordRecipeIngredientsItemcodePrimaryStockUnit,
                                         "saleUnit" : custrecordRecipeIngredientsItemcodePrimarySaleUnit,
-                                        "category" : customrecordFoodRecipeLinesSearchColIngredientCategory
+                                        "category" : customrecordFoodRecipeLinesSearchColIngredientCategory,
+                                        "itemClassMarkUp": itemClassMarkUp
                                     })
                                 });
             
                             }
                 
-                            //log.debug('cusIngLine',cusIngLine)
+                            log.debug('fiResults',fiResults)
                     
                             if(fiResults.length > 0){
                                 for(var i = 0; i<fiResults.length;i++){
@@ -247,7 +252,13 @@
                                     log.debug('searchLine',searchLine)
                 
                                     if(searchLine >= 0){
-                                        currRecObj.setSublistValue({
+
+                                        currRecObj.selectLine({
+                                            sublistId: 'recmachcustrecord_related_food_menu',
+                                            line: searchLine
+                                        });
+
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_qty_c',
                                             line: searchLine,
@@ -256,9 +267,11 @@
             
                                         var fromUom = getUnitsTypeUom(fiResults[i].stockUnit);
                                         var toUom = getUnitsTypeUom(fiResults[i].saleUnit);
-                                        log.debug('fiResults[i].aveCost',fiResults[i].aveCost)
-                                        log.debug('fromUom.conversionrate',fromUom.conversionrate)
-                                        log.debug('toUom.conversionrate',toUom.conversionrate)
+
+                                        log.debug('fiResults[i].aveCost', fiResults[i].aveCost)
+                                        log.debug('fromUom.conversionrate', fromUom.conversionrate)
+                                        log.debug('toUom.conversionrate', toUom.conversionrate)
+
                                         if(fiResults[i].aveCost && fromUom.conversionrate && toUom.conversionrate){
                                             var convertedCost = fiResults[i].aveCost / (parseFloat(fromUom.conversionrate) / parseFloat(toUom.conversionrate));
                                         }
@@ -266,7 +279,7 @@
                                             var convertedCost = 0;
                                         }
             
-                                        currRecObj.setSublistValue({
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_customunit',
                                             line: searchLine,
@@ -278,14 +291,14 @@
                                             amountVal = amountVal.toFixed(2);
                                         }
                             
-                                        currRecObj.setSublistValue({
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_customamount',
                                             line: searchLine,
                                             value: amountVal
                                         });
             
-                                        currRecObj.setSublistValue({
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_custom_ingdt_category',
                                             line: searchLine,
@@ -312,21 +325,21 @@
                                         });
 
                                         var convertedPurchaseQuantity = getConvertedQuantity(fiResults[i].cusQuantity, currentUom, uom_purchase);
-                                        currRecObj.setSublistValue({
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_qty_c_purchase',
                                             line: searchLine,
                                             value: convertedPurchaseQuantity
                                         });
                                         var convertedStockQuantity = getConvertedQuantity(fiResults[i].cusQuantity, currentUom, uom_stock);
-                                        currRecObj.setSublistValue({
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_qty_c_stock',
                                             line: searchLine,
                                             value: convertedStockQuantity
                                         });
 
-                                        currRecObj.setSublistValue({
+                                        currRecObj.setCurrentSublistValue({
                                             sublistId: 'recmachcustrecord_related_food_menu',
                                             fieldId: 'custrecord_qty_remaining',
                                             line: searchLine,
@@ -340,6 +353,15 @@
                                         });
 
                                         log.debug('qtyRem',qtyRem)
+
+                                        // currRecObj.setSublistValue({
+                                        //     sublistId: 'recmachcustrecord_related_food_menu',
+                                        //     fieldId: 'custrecord_unit_cost_uom_stock',
+                                        //     line: searchLine,
+                                        //     value: convertUnitCost(convertedCost, currentUom, uom_stock, fiResults[i].itemClassMarkUp)
+                                        // });
+
+                                        currRecObj.commitLine({ sublistId: 'recmachcustrecord_related_food_menu' });
 
                                     }
                                 }
@@ -359,6 +381,20 @@
                     
 			}
 
+            function convertUnitCost(unitCost, uom, uomStock, markup){
+                var fromUom = getUnitsTypeUom(uom);
+                var toUom = getUnitsTypeUom(uomStock);
+                markup = parseFloat(markup) / 100;
+
+                log.debug('convertUnitCost | markup',markup);
+
+                var convertedUnitCost = unitCost * parseFloat(toUom.conversionrate) / parseFloat(fromUom.conversionrate);
+                log.debug('convertedUnitCost',convertedUnitCost);
+                log.debug('convertedUnitCost * (1 + markup)',convertedUnitCost * (1 + markup));
+
+                return convertedUnitCost * (1 + markup);
+            }
+
 			function summarize(summary) {
 			
 			}
@@ -369,7 +405,7 @@
                 var fromUom = getUnitsTypeUom(uom);
                 var toUom = getUnitsTypeUom(uom_target);
                 var convertedQuantity = quantity * parseFloat(fromUom.conversionrate) / parseFloat(toUom.conversionrate) 
-        
+                log.debug('getConvertedQuantity convertedQuantity',convertedQuantity);
                 return convertedQuantity;
             }
 
@@ -378,7 +414,7 @@
         
                 var results = query.runSuiteQL({query: "SELECT internalid, conversionrate FROM UnitsTypeUom WHERE internalid='"+id+"'"}).asMappedResults()[0];
 
-        
+                log.debug('getUnitsTypeUom results',results);
                 return results;
             }
 
