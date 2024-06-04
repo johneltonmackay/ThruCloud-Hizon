@@ -98,8 +98,8 @@ define(['N/record', 'N/search'],
     
                     arrCreatedFromData.forEach((data, i) => {
                         Object.entries(data).forEach(([key, value]) => {
-                            log.debug('beforeLoad: key', key);
-                            log.debug('beforeLoad: value', value);
+                            // log.debug('beforeLoad: key', key);
+                            // log.debug('beforeLoad: value', value);
                             currentRecord.setSublistValue({
                                 sublistId: 'recmachcustrecord_transaction_fb_food',
                                 fieldId: key,
@@ -122,7 +122,7 @@ define(['N/record', 'N/search'],
                             fieldId: 'custrecord_option',
                             line: i,
                         });
-                        log.debug('beforeLoad: intOptionType', intOptionType);
+                        // log.debug('beforeLoad: intOptionType', intOptionType);
                     
                         if (intCostingStructure == 1) { // Base Menu
                             if (intOptionType != intBaseMenu) {
@@ -152,21 +152,53 @@ define(['N/record', 'N/search'],
                     }
                 }
 
-                processBillingItems(scriptContext)
+                processBillingItems(scriptContext, arrSearchAddOn)
     
             }
             
         };
         
         // private function
-        const processBillingItems = (scriptContext) => {
+        const processBillingItems = (scriptContext, arrSearchAddOn) => {
             const currentRecord = scriptContext.newRecord;
             const numLines = currentRecord.getLineCount({
                 sublistId: 'item'
             });
             log.debug('processBillingItems: numLines', numLines)
 
-            let arrAdditionalLine = buildBillingItems(currentRecord)
+            for (let x = 0; x < numLines; x++) {
+                currentRecord.setSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'taxrate1', 
+                    value: '12.0%',
+                    line: x,
+                });
+                let strAmount = currentRecord.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'amount', 
+                    line: x,
+                });
+                // log.debug('TEST strAmount', strAmount)
+                currentRecord.setSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'tax1amt', 
+                    value: parseFloat(strAmount * 0.12),
+                    line: x,
+                });
+                let intTaxAmount = currentRecord.getSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'tax1amt', 
+                    line: x,
+                });
+                currentRecord.setSublistValue({
+                    sublistId: 'item',
+                    fieldId: 'grossamt', 
+                    value: parseFloat(strAmount + intTaxAmount),
+                    line: x,
+                });
+            }
+
+            let arrAdditionalLine = buildBillingItems(currentRecord, arrSearchAddOn)
 
             for (let i = 0; i < arrAdditionalLine.length; i++) {
                 let additionalLine = arrAdditionalLine[i];
@@ -185,14 +217,14 @@ define(['N/record', 'N/search'],
         }
         
 
-        const buildBillingItems = (currentRecord) => {
+        const buildBillingItems = (currentRecord, arrSearchAddOn) => {
             let arrBillingData = []
 
             let baseMenuValue = currentRecord.getText({
                 fieldId: 'custbody_final_menu_base'
             })
             if (baseMenuValue){
-                let objBaseMenuData = getBaseMenuItems(currentRecord, baseMenuValue)
+                let objBaseMenuData = getBaseMenuItems(currentRecord, baseMenuValue, arrSearchAddOn)
                 if (objBaseMenuData){
                     arrBillingData.push(objBaseMenuData)
                 }
@@ -203,7 +235,7 @@ define(['N/record', 'N/search'],
                     fieldId: fieldId
                 })
                 if(addOnValue){
-                   let objAddOnData = getAddOnItems(currentRecord, addOnValue, index)
+                   let objAddOnData = getAddOnItems(currentRecord, addOnValue, index, arrSearchAddOn)
                    arrBillingData.push(objAddOnData) 
                 }
             });
@@ -213,11 +245,12 @@ define(['N/record', 'N/search'],
             return arrBillingData
         }
 
-        const getBaseMenuItems = (currentRecord, baseMenuValue) => {
+        const getBaseMenuItems = (currentRecord, baseMenuValue, arrSearchAddOn) => {
             let dataObject = { 
                 item: 1694, // Food and Beverage Food and Beverage
-                taxcode: 5, // VAT_PH:UNDEF-PH
-                description: baseMenuValue
+                taxcode: 6, // VAT_PH:S-PH
+                description: baseMenuValue,
+                taxrate1: "12.0%" // Added tax rate
             };
             
             ARR_BASE_MENU_FIELDID.forEach((fieldId, index) => {
@@ -228,28 +261,38 @@ define(['N/record', 'N/search'],
                             dataObject.quantity = baseMenuValue;
                             break;
                         case 1:
-                            dataObject.amount = baseMenuValue;
+                            dataObject.rate = baseMenuValue;
                             break;
-                        case 2:
-                            dataObject.grossamt = baseMenuValue;
-                            break;
+                        // case 2:
+                        //     dataObject.grossamt = baseMenuValue;
+                        //     break;
                         default:
                             break;
                     }
                 }
             });
+            let costingStructure = arrSearchAddOn.find(data => data.recName === baseMenuValue);
+
+            // Add vatableSales to dataObject
+            if (dataObject.quantity !== undefined &&  dataObject.rate !== undefined) {
+                dataObject.amount =  parseFloat((dataObject.rate * dataObject.quantity) /  1.12)
+                dataObject.tax1amt = dataObject.amount * 0.12
+                dataObject.grossamt = dataObject.rate * dataObject.quantity
+                dataObject.custcol_bqt_line_cost_structure = costingStructure.recId ? costingStructure.recId : null
+            }
             
             return dataObject;
         }
         
-        const getAddOnItems = (currentRecord, addOnValue, index) => {
+        const getAddOnItems = (currentRecord, addOnValue, index, arrSearchAddOn) => {
             let objRawBillData
                         
             let dataObject = { 
                 index: index,
                 item: 1694, // Food and Beverage Food and Beverage
-                taxcode: 5, // VAT_PH:UNDEF-PH
-                description: addOnValue
+                taxcode: 6, // // VAT_PH:S-PH
+                description: addOnValue,
+                taxrate1: "12.0%" // Added tax rate
             };
                 
             
@@ -265,7 +308,7 @@ define(['N/record', 'N/search'],
                 fieldId: ARR_PROPOSED_PRICE_FIELDID[index]
             }));
             if (!isNaN(addOnProposeAmountValue)) {
-                dataObject.amount = addOnProposeAmountValue;
+                dataObject.rate = addOnProposeAmountValue;
             }
             
             let addOnTotalPaxValue = parseFloat(currentRecord.getValue({
@@ -274,8 +317,14 @@ define(['N/record', 'N/search'],
             if (!isNaN(addOnTotalPaxValue)) {
                 dataObject.quantity = addOnTotalPaxValue;
             }
-           
-            if (dataObject.grossamt !== undefined && dataObject.amount !== undefined && dataObject.quantity !== undefined) {
+
+            let costingStructure = arrSearchAddOn.find(data => data.recName === addOnValue);
+
+            if (dataObject.grossamt !== undefined && dataObject.rate !== undefined && dataObject.quantity !== undefined) {
+                dataObject.amount =  parseFloat((dataObject.rate * dataObject.quantity) /  1.12)
+                dataObject.tax1amt = dataObject.amount * 0.12
+                dataObject.grossamt = dataObject.rate * dataObject.quantity
+                dataObject.custcol_bqt_line_cost_structure = costingStructure.recId ? costingStructure.recId : null
                 objRawBillData = dataObject;
             }
             
@@ -326,6 +375,8 @@ define(['N/record', 'N/search'],
         }
 
         const getCostingStructure = (parmAddOn, arrSearchAddOn) => {
+            log.debug('getCostingStructure: parmAddOn', parmAddOn);
+            log.debug('getCostingStructure: arrSearchAddOn', arrSearchAddOn);
             let objResults = {}
             arrSearchAddOn.forEach(item => {
                 let strAddOnNameId = item.recId
@@ -336,7 +387,8 @@ define(['N/record', 'N/search'],
                     objResults = {
                       name: strRecName,
                       costStructure: strCostStructureId,
-                      optionValue: strOptionId
+                      optionValue: strOptionId,
+                      internalId: strAddOnNameId
                     }
                 }
             });
@@ -386,9 +438,9 @@ define(['N/record', 'N/search'],
                             custrecord_food_menu_id: intFoodMenuId,
                             custrecord_menu_class: intMenuClass,
                             custrecord_fcs_cost_head: intCostHead,
-                            custrecord_menu_cost: intMenuCost
+                            custrecord_menu_cost: intMenuCost,
                         }
-                        log.debug("loadCreatedFrom objData" + i, objData)
+                        // log.debug("loadCreatedFrom objData" + i, objData)
 
                         if (objData){
                             arrCreatedFromData.push(objData)

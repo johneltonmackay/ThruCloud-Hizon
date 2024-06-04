@@ -410,6 +410,7 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
             
             // Convert the object back to an array
             let consolidatedArray = Object.values(consolidatedData);
+            log.debug('consolidateData consolidatedArray', consolidatedArray)
 
             let groupedByOutlet = {};
 
@@ -419,14 +420,14 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
                 let units = item.Units;
                 let recordtype = item.recordtype;
                 let transferlocation = "";
-
+            
                 if (recordtype == 'transferorder' || recordtype == 'intercompanytransferorder'){
                     transferlocation = item.transferlocation;
                 }
-
+            
                 if (!groupedByOutlet[location]) {
                     groupedByOutlet[location] = {
-                        recordid: recordid,
+                        recordid: [...recordid],  // Initialize with the current recordid
                         location: location,
                         units: units,
                         transKey: transKey,
@@ -436,6 +437,12 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
                     if (transferlocation) {
                         groupedByOutlet[location].transferlocation = transferlocation;
                     }
+                } else {
+                    recordid.forEach(id => {
+                        if (!groupedByOutlet[location].recordid.includes(id)) {
+                            groupedByOutlet[location].recordid.push(id);  // Push only if not already included
+                        }
+                    });
                 }
                 
                 // Push the item to the data array of the corresponding outlet and recordid
@@ -443,7 +450,7 @@ define(['N/record', 'N/search', 'N/runtime', 'N/email'],
             });
 
             arrSavedSearchResults = groupedByOutlet;
-        
+            log.debug('consolidateData arrSavedSearchResults', arrSavedSearchResults)
             return arrSavedSearchResults
         }
         
