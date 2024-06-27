@@ -13,16 +13,17 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
 
         const getInputData = (inputContext) => {
             let script = runtime.getCurrentScript();
-            let paramsId = script.getParameter({name: 'custscript_idingr_record'});
-            let paramsContextType = script.getParameter({name: 'custscript_context_type'});
+            let paramsId = script.getParameter({name: 'custscript_id_record'});
+            let paramsRecType = script.getParameter({name: 'custscript_rec_type'});
             log.debug('paramsId', paramsId);
-            log.debug('paramsContextType', paramsContextType);
+            log.debug('paramsRecType', paramsRecType);
 
             let recId = JSON.parse(paramsId);
+            let recType = paramsRecType;
             var fmObj = [];
 
             const currentRecord = record.load({
-                type: 'customrecord_costing_sheet',
+                type: recType,
                 id: recId,
                 isDynamic: true,
             })
@@ -30,10 +31,10 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
             log.debug('currentRecord', currentRecord);
 
             var outlet = currentRecord.getValue({
-                fieldId : 'custrecord_tc_costingsheet_location' 
+                fieldId : 'location' 
             })
 
-            var sublistName = 'recmachcustrecord_related_topsheet';
+            var sublistName = 'recmachcustrecord_transaction_fb_food';
                 
             var foodMenuCnt = currentRecord.getLineCount({
                 sublistId: sublistName
@@ -77,17 +78,24 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                 });
                 log.debug('isModified',isModified)
 
-                if(isModified == true && paramsContextType == 'USEREVENT'){
-                    fmObj.push({
-                        "recId": recId,
-                        "idNo" : idNo,
-                        "outlet":outlet,
-                        "updatePax": updatePax,
-                        "foodRecipe": foodRecipe,
-                        "frFieldNoPax": frField.custrecord_recipe_no_of_pax
-                    })
-                  log.debug('fmObj',fmObj)
-                }
+                var strMenuPrintOut = currentRecord.getSublistValue({
+                    sublistId: sublistName,
+                    fieldId: 'custrecord_menu_desc_beo_printout_v2',
+                    line: k
+                });
+                log.debug('strMenuPrintOut',strMenuPrintOut)
+
+                
+                fmObj.push({
+                    "recId": recId,
+                    "idNo" : idNo,
+                    "outlet":outlet,
+                    "updatePax": updatePax,
+                    "foodRecipe": foodRecipe,
+                    "frFieldNoPax": frField.custrecord_recipe_no_of_pax
+                })
+                log.debug('fmObj',fmObj)    
+                
 
                 currentRecord.selectLine({
                     sublistId: sublistName,
@@ -98,6 +106,12 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                     sublistId: sublistName,
                     fieldId: 'custrecord_fm_is_modified',
                     value: false
+                });
+
+                currentRecord.setCurrentSublistValue({
+                    sublistId: sublistName,
+                    fieldId: 'custrecord_menu_desc_beo_printout_v2',
+                    value: strMenuPrintOut ? strMenuPrintOut : 'N/A'
                 });
 
                 currentRecord.commitLine({sublistId: sublistName})
@@ -116,6 +130,9 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
         }
 
         const map = (mapContext) => {
+            log.debug('map : mapContext', mapContext);
+            let objMapValue = JSON.parse(mapContext.value)
+            log.debug('map : objMapValue', objMapValue);
             mapContext.write({
                 key : mapContext.key,
                 value : mapContext.value
@@ -123,7 +140,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
         }
 
         const reduce = (reduceContext) => {
-            //   log.debug('reduceContext.values 0', reduceContext.values[0])
+              log.debug('reduceContext.values 0', reduceContext.values[0])
               var hasError = 0;
   
               var parsedObject = JSON.parse(reduceContext.values[0]);
@@ -171,8 +188,6 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                         value : idNo
                       })
 
-
-
                       let arrSubRecipeData = []
 
                       let arrItemData = getItemData()
@@ -197,7 +212,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                           log.debug('arrJoinRecipes', outlet);
                           arrJoinRecipes.forEach((recipe, index) => {
                               let itemId = recipe.itemId;
-                      
+
                               let arrFilteredItems = arrItemData.filter(item => item.outlet === outlet && item.internalid === itemId);
                               log.debug('arrFilteredItems', arrFilteredItems);
                       
@@ -209,8 +224,8 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                               } else {
                                   arrJoinRecipes[index].aveCost = 0;
                                   arrJoinRecipes[index].markUp = 0;
-                              }
-                          });
+                          }
+                      });                    
                       }                 
                     
                       currRecObj.setValue({
@@ -314,7 +329,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                   });
 
                                   currRecObj.setCurrentSublistValue({
-                                    sublistId: 'recmachcustrecord_related_food_menu',
+                                      sublistId: 'recmachcustrecord_related_food_menu',
                                     fieldId: 'custrecord_uom_c_purchase',
                                     line: searchLine,
                                     value: fiResults[i].saleUnit ? fiResults[i].saleUnit : null
@@ -327,7 +342,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                     value: fiResults[i].stockUnit ? fiResults[i].stockUnit : null
                                   });
 
-                                  
+
                                   currRecObj.commitLine({ sublistId: 'recmachcustrecord_related_food_menu' });
 
                               }
@@ -345,25 +360,6 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                       log.error('Error:', error.message);
                       // You can also perform any necessary error handling or recovery steps here
                   }
-
-                if(hasError > 0){
-                    var deployRec = record.submitFields({
-                        type: 'customrecord_costing_sheet',
-                        id: recId,
-                        values: {
-                            custrecord_processing_status: 'FAILED',
-                        }
-                    });
-                }
-                else{
-                    var deployRec = record.submitFields({
-                        type: 'customrecord_costing_sheet',
-                        id: recId,
-                        values: {
-                            custrecord_processing_status: 'COMPLETED',
-                        }
-                    });
-                }
         }
 
         
@@ -418,6 +414,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                 var subRecipe = pageData[pageResultIndex].getValue({ name: 'custrecord_foodrecipe_subrecipe' });
 
                                 var cusQuantity = (quantity / frFieldNoPax) * updatePax;
+
 
                                 let objRecipeLineData = {
                                     "itemId": itemId,
@@ -485,13 +482,13 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                 var aveCost = pageData[pageResultIndex].getValue({name: 'locationaveragecost'});
                                 var markUp = pageData[pageResultIndex].getValue({ name: 'custrecord_itemclass_markup', join: 'custitem_item_class'});
 
-                                arrItemData.push({
-                                    internalid: internalid,
-                                    itemCode: itemCode,
-                                    outlet: outlet,
-                                    aveCost: aveCost,
-                                    markUp: markUp,
-                                });
+                                    arrItemData.push({
+                                        internalid: internalid,
+                                        itemCode: itemCode,
+                                        outlet: outlet,
+                                        aveCost: aveCost,
+                                        markUp: markUp,
+                                    });
 
                             }
                         }

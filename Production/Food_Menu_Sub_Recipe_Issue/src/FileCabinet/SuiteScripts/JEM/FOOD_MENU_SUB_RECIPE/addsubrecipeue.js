@@ -10,85 +10,87 @@ define(['N/record', 'N/search'],
 
         const afterSubmit = (scriptContext) => {
             log.debug("CONTEXT: ", scriptContext.type);
-            try {
-                const newRecord = scriptContext.newRecord;
-                let recType = newRecord.type
-                let strId = newRecord.id
-                const objRecord = record.load({
-                        type: recType,
-                        id: strId,
-                        isDynamic: true,
-                    });
-                log.debug("objRecord", objRecord)
-                if (objRecord){
-                    let menuId = objRecord.getValue({
-                        fieldId:'custrecord_fcs_menu'
-                    })
-                    log.debug("afterSubmit menuId", menuId)
-
-                    if (menuId){
-                        let arrCustomIngredients = getMainRecipe(menuId)
-                        let arrCurrentCustomIng = getCurrentCustomIng(strId)
-
-                        deleteCurrentIng(arrCurrentCustomIng)
-
-                        arrCustomIngredients.forEach(data => {
-                            log.debug("afterSubmit data", data)
-                            objRecord.selectNewLine({
-                                sublistId:'recmachcustrecord_related_food_menu'
-                            })
-                            objRecord.setCurrentSublistValue({
-                                sublistId:'recmachcustrecord_related_food_menu',
-                                fieldId: 'custrecord_ingdt_c',
-                                value: data.recItemCode,
-                                ignoreFieldChange: true
-                            })
-                            objRecord.setCurrentSublistValue({
-                                sublistId:'recmachcustrecord_related_food_menu',
-                                fieldId: 'custrecord_qty_c',
-                                value: data.recQty,
-                                ignoreFieldChange: true
-                            })
-                            objRecord.setCurrentSublistValue({
-                                sublistId:'recmachcustrecord_related_food_menu',
-                                fieldId: 'custrecord_uom_c',
-                                value: data.recUom,
-                                ignoreFieldChange: true
-                            })
-                            objRecord.setCurrentSublistValue({
-                                sublistId:'recmachcustrecord_related_food_menu',
-                                fieldId: 'custrecord_customamount',
-                                value: data.recAmount,
-                                ignoreFieldChange: true
-                            })
-                            objRecord.setCurrentSublistValue({
-                                sublistId:'recmachcustrecord_related_food_menu',
-                                fieldId: 'custrecord_customunit',
-                                value: data.recUnitCost,
-                                ignoreFieldChange: true
-                            })
-                            objRecord.setCurrentSublistValue({
-                                sublistId:'recmachcustrecord_related_food_menu',
-                                fieldId: 'custrecord_g_kitchen_c',
-                                value: data.recCommonItem,
-                                ignoreFieldChange: true
-                            })
-                            objRecord.commitLine({
-                                sublistId: 'recmachcustrecord_related_food_menu'
-                            })
+            if (scriptContext.type == 'create'){
+                try {
+                    const newRecord = scriptContext.newRecord;
+                    let recType = newRecord.type
+                    let strId = newRecord.id
+                    const objRecord = record.load({
+                            type: recType,
+                            id: strId,
+                            isDynamic: true,
                         });
-                        let recordId = objRecord.save({
-                            enableSourcing: true,
-                            ignoreMandatoryFields: true
-                        });
-                        log.debug("recordId" + recType, recordId)
-                        
-
-                    }
-
-                }               
-            } catch (err) {
-                log.error('afterSubmit', err.message);
+                    log.debug("objRecord", objRecord)
+                    if (objRecord){
+                        let menuId = objRecord.getValue({
+                            fieldId:'custrecord_fcs_menu'
+                        })
+                        log.debug("afterSubmit menuId", menuId)
+    
+                        if (menuId){
+                            let arrCustomIngredients = getMainRecipe(menuId)
+                            let arrCurrentCustomIng = getCurrentCustomIng(strId)
+    
+                            deleteCurrentIng(arrCurrentCustomIng)
+    
+                            arrCustomIngredients.forEach(data => {
+                                log.debug("afterSubmit data", data)
+                                objRecord.selectNewLine({
+                                    sublistId:'recmachcustrecord_related_food_menu'
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_ingdt_c',
+                                    value: data.recItemCode,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_qty_c',
+                                    value: data.recQty,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_uom_c',
+                                    value: data.recUom,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_customamount',
+                                    value: data.recAmount,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_customunit',
+                                    value: data.recUnitCost,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_g_kitchen_c',
+                                    value: data.recCommonItem,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.commitLine({
+                                    sublistId: 'recmachcustrecord_related_food_menu'
+                                })
+                            });
+                            let recordId = objRecord.save({
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            log.debug("recordId" + recType, recordId)
+                            
+    
+                        }
+    
+                    }               
+                } catch (err) {
+                    log.error('afterSubmit', err.message);
+                }
             }
         }
 
@@ -104,8 +106,8 @@ define(['N/record', 'N/search'],
                         type: 'customrecord_custom_ingdt',
                         id: id,
                     });
+                    log.debug('deleteCurrentIng recordId', deletedId)
                 });
-                log.debug('deleteCurrentIng recordId', deletedId)
 
             } catch (err) {
                 log.error('getCurrentCustomIng error', err.message);

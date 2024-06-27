@@ -77,7 +77,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                 });
                 log.debug('isModified',isModified)
 
-                if(isModified == true && paramsContextType == 'USEREVENT'){
+                if(isModified == true || paramsContextType == 'USEREVENT'){
                     fmObj.push({
                         "recId": recId,
                         "idNo" : idNo,
@@ -123,7 +123,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
         }
 
         const reduce = (reduceContext) => {
-            //   log.debug('reduceContext.values 0', reduceContext.values[0])
+              log.debug('reduceContext.values 0', reduceContext.values[0])
               var hasError = 0;
   
               var parsedObject = JSON.parse(reduceContext.values[0]);
@@ -145,33 +145,10 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                           value : updatePax
                       })
 
-                      let intMenuId = currRecObj.getValue({
-                          fieldId : 'custrecord_fcs_menu',
-                      })
-
-                      let intCostHead = 0
-                      fieldLookUp = search.lookupFields({
-                        type: 'customrecord_food_recipes',
-                        id: intMenuId,
-                        columns: 'custrecord_food_recipe_cost_per_pax_stor'
-                      });
-
-                      log.debug("fieldLookUp",fieldLookUp)
-                      if (fieldLookUp){
-                        intCostHead = fieldLookUp.custrecord_food_recipe_cost_per_pax_stor;
-                      }
-
-                      currRecObj.setValue({
-                        fieldId : 'custrecord_fcs_cost_head',
-                        value : intCostHead
-                      })
-
                       currRecObj.setValue({
                         fieldId : 'custrecord_food_menu_id',
                         value : idNo
                       })
-
-
 
                       let arrSubRecipeData = []
 
@@ -192,31 +169,26 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                       }
 
                       let arrJoinRecipes = [...arrMainRecipe, ...arrSubRecipeData];
+
                       if (arrJoinRecipes.length > 0) {
-                          log.debug('arrJoinRecipes', arrJoinRecipes);
-                          log.debug('arrJoinRecipes', outlet);
-                          arrJoinRecipes.forEach((recipe, index) => {
-                              let itemId = recipe.itemId;
-                      
-                              let arrFilteredItems = arrItemData.filter(item => item.outlet === outlet && item.internalid === itemId);
-                              log.debug('arrFilteredItems', arrFilteredItems);
-                      
-                              if (arrFilteredItems.length > 0) {
-                                  let aveCost = arrFilteredItems[0].aveCost;
-                                  let markUp = arrFilteredItems[0].markUp;
-                                  arrJoinRecipes[index].aveCost = aveCost;
-                                  arrJoinRecipes[index].markUp = markUp;
+                        log.debug('arrJoinRecipes length', arrJoinRecipes.length )
+                          for (var j = 0; j < arrJoinRecipes.length; j++) {
+                              let itemId = arrJoinRecipes[j].itemCode
+
+                              let arrfilteredItems = arrItemData.filter(item => item.outlet == outlet && item.itemCode == itemId);
+                              log.debug('arrfilteredItems', arrfilteredItems)
+                              if (arrfilteredItems.length > 0){
+                                  let aveCost = arrfilteredItems[0].aveCost
+                                  let markUp = arrfilteredItems[0].markUp
+                                  arrJoinRecipes[j].aveCost = aveCost
+                                  arrJoinRecipes[j].markUp = markUp
                               } else {
-                                  arrJoinRecipes[index].aveCost = 0;
-                                  arrJoinRecipes[index].markUp = 0;
+                                arrJoinRecipes[j].aveCost = 0
+                                arrJoinRecipes[j].markUp = 0
                               }
-                          });
-                      }                 
-                    
-                      currRecObj.setValue({
-                        fieldId : 'custrecord_menu_cost',
-                        value : intCostHead * updatePax
-                      })
+
+                          }
+                      }
           
                       let fiResults = arrJoinRecipes
                       log.debug('fiResults',fiResults)
@@ -286,48 +258,62 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                       value: fiResults[i].category
                                   });
 
-                                  var objfromUom = getUnitsTypeUom(fiResults[i].saleUnit);
-                                  var objtoPurchaseUom = getUnitsTypeUom(fiResults[i].saleUnit);
-                                  var objtoStockUom = getUnitsTypeUom(fiResults[i].stockUnit);
+                                 
+                                  var currentUom = currRecObj .getSublistValue({
+                                      sublistId: 'recmachcustrecord_related_food_menu',
+                                      fieldId: 'custrecord_uom_c',
+                                      line: searchLine
+                                  });
+                  
+                                  var uom_purchase = currRecObj.getSublistValue({
+                                      sublistId: 'recmachcustrecord_related_food_menu',
+                                      fieldId: 'custrecord_uom_c_purchase',
+                                      line: searchLine
+                                  });
+                                  
+                                  var uom_stock = currRecObj.getSublistValue({
+                                      sublistId: 'recmachcustrecord_related_food_menu',
+                                      fieldId: 'custrecord_uom_c_stock',
+                                      line: searchLine
+                                  });
 
-                                  var convertedPurchaseQuantity = fiResults[i].cusQuantity * parseFloat(objfromUom.conversionrate) / parseFloat(objtoPurchaseUom.conversionrate);
-                                  var convertedStockQuantity = fiResults[i].cusQuantity * parseFloat(objfromUom.conversionrate) / parseFloat(objtoStockUom.conversionrate);
-
+                                  var convertedPurchaseQuantity = getConvertedQuantity(fiResults[i].cusQuantity, currentUom, uom_purchase);
                                   currRecObj.setCurrentSublistValue({
                                       sublistId: 'recmachcustrecord_related_food_menu',
                                       fieldId: 'custrecord_qty_c_purchase',
                                       line: searchLine,
-                                      value: convertedPurchaseQuantity ? convertedPurchaseQuantity : 0
+                                      value: convertedPurchaseQuantity
                                   });
+                                  var convertedStockQuantity = getConvertedQuantity(fiResults[i].cusQuantity, currentUom, uom_stock);
                                   currRecObj.setCurrentSublistValue({
                                       sublistId: 'recmachcustrecord_related_food_menu',
                                       fieldId: 'custrecord_qty_c_stock',
                                       line: searchLine,
-                                      value: convertedStockQuantity ? convertedStockQuantity : 0
+                                      value: convertedStockQuantity
                                   });
 
                                   currRecObj.setCurrentSublistValue({
                                       sublistId: 'recmachcustrecord_related_food_menu',
                                       fieldId: 'custrecord_qty_remaining',
                                       line: searchLine,
-                                      value: convertedStockQuantity ? convertedStockQuantity : 0
+                                      value: convertedStockQuantity
                                   });
 
-                                  currRecObj.setCurrentSublistValue({
-                                    sublistId: 'recmachcustrecord_related_food_menu',
-                                    fieldId: 'custrecord_uom_c_purchase',
-                                    line: searchLine,
-                                    value: fiResults[i].saleUnit ? fiResults[i].saleUnit : null
+                                  var qtyRem = currRecObj.getSublistValue({
+                                      sublistId: 'recmachcustrecord_related_food_menu',
+                                      fieldId: 'custrecord_qty_remaining',
+                                      line: searchLine
                                   });
 
-                                  currRecObj.setCurrentSublistValue({
-                                    sublistId: 'recmachcustrecord_related_food_menu',
-                                    fieldId: 'custrecord_uom_c_stock',
-                                    line: searchLine,
-                                    value: fiResults[i].stockUnit ? fiResults[i].stockUnit : null
-                                  });
+                                  log.debug('qtyRem',qtyRem)
 
-                                  
+                                  // currRecObj.setSublistValue({
+                                  //     sublistId: 'recmachcustrecord_related_food_menu',
+                                  //     fieldId: 'custrecord_unit_cost_uom_stock',
+                                  //     line: searchLine,
+                                  //     value: convertUnitCost(convertedCost, currentUom, uom_stock, fiResults[i].itemClassMarkUp)
+                                  // });
+
                                   currRecObj.commitLine({ sublistId: 'recmachcustrecord_related_food_menu' });
 
                               }
@@ -345,25 +331,6 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                       log.error('Error:', error.message);
                       // You can also perform any necessary error handling or recovery steps here
                   }
-
-                if(hasError > 0){
-                    var deployRec = record.submitFields({
-                        type: 'customrecord_costing_sheet',
-                        id: recId,
-                        values: {
-                            custrecord_processing_status: 'FAILED',
-                        }
-                    });
-                }
-                else{
-                    var deployRec = record.submitFields({
-                        type: 'customrecord_costing_sheet',
-                        id: recId,
-                        values: {
-                            custrecord_processing_status: 'COMPLETED',
-                        }
-                    });
-                }
         }
 
         
@@ -418,6 +385,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                 var subRecipe = pageData[pageResultIndex].getValue({ name: 'custrecord_foodrecipe_subrecipe' });
 
                                 var cusQuantity = (quantity / frFieldNoPax) * updatePax;
+
 
                                 let objRecipeLineData = {
                                     "itemId": itemId,
@@ -485,14 +453,17 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
                                 var aveCost = pageData[pageResultIndex].getValue({name: 'locationaveragecost'});
                                 var markUp = pageData[pageResultIndex].getValue({ name: 'custrecord_itemclass_markup', join: 'custitem_item_class'});
 
-                                arrItemData.push({
-                                    internalid: internalid,
-                                    itemCode: itemCode,
-                                    outlet: outlet,
-                                    aveCost: aveCost,
-                                    markUp: markUp,
-                                });
+                                var existingIndex = arrItemData.findIndex(item => item.internalid === internalid);
 
+                                if (existingIndex == -1) {
+                                    arrItemData.push({
+                                        internalid: internalid,
+                                        itemCode: itemCode,
+                                        outlet: outlet,
+                                        aveCost: aveCost,
+                                        markUp: markUp,
+                                    });
+                                }
                             }
                         }
                     }
@@ -504,12 +475,36 @@ define(['N/record', 'N/runtime', 'N/search', 'N/query'],
             }
         }
 
+        function convertUnitCost(unitCost, uom, uomStock, markup){
+            var fromUom = getUnitsTypeUom(uom);
+            var toUom = getUnitsTypeUom(uomStock);
+            markup = parseFloat(markup) / 100;
+
+            log.debug('convertUnitCost | markup',markup);
+
+            var convertedUnitCost = unitCost * parseFloat(toUom.conversionrate) / parseFloat(fromUom.conversionrate);
+            log.debug('convertedUnitCost',convertedUnitCost);
+            log.debug('convertedUnitCost * (1 + markup)',convertedUnitCost * (1 + markup));
+
+            return convertedUnitCost * (1 + markup);
+        }
+
+        function getConvertedQuantity(quantity, uom, uom_target){
+            if(!quantity || !uom || !uom_target) return null;
+    
+            var fromUom = getUnitsTypeUom(uom);
+            var toUom = getUnitsTypeUom(uom_target);
+            var convertedQuantity = quantity * parseFloat(fromUom.conversionrate) / parseFloat(toUom.conversionrate) 
+            log.debug('getConvertedQuantity convertedQuantity',convertedQuantity);
+            return convertedQuantity;
+        }
+
         function getUnitsTypeUom(id){
+            var out;
     
             var results = query.runSuiteQL({query: "SELECT internalid, conversionrate FROM UnitsTypeUom WHERE internalid='"+id+"'"}).asMappedResults()[0];
 
-            log.debug('getUnitsTypeUom results', results);
-
+            log.debug('getUnitsTypeUom results',results);
             return results;
         }
 
