@@ -95,6 +95,10 @@ define(['N/record', 'N/search', 'N/runtime', 'N/query'],
                     filters = [
                         ['custrecord_related_topsheet.internalid', 'anyof', recId],
                     ];
+                } else if (recType == 'customrecord_food_menu_fb'){
+                    filters = [
+                        ['internalid', 'anyof', recId],
+                    ];
                 } else {
                     filters = [
                         ['custrecord_transaction_fb_food.internalid', 'anyof', recId],
@@ -385,6 +389,8 @@ define(['N/record', 'N/search', 'N/runtime', 'N/query'],
                     type: 'customrecord_food_recipe_lines',
                     filters: [
                         ['custrecord_recipe_parent.internalid', 'anyof', recipe],
+                        'AND',
+                        ['custrecord_recipe_ingredients_itemcode.isinactive', 'is', 'F'],
                       ],
                     columns: [
                         search.createColumn({ name: 'custrecord_recipe_ingredients_itemcode' }),

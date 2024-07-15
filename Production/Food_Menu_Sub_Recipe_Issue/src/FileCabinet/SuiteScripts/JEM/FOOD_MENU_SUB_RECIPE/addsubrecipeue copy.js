@@ -2,17 +2,15 @@
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  */
-define(['N/record', 'N/search', 'N/runtime', 'N/task'],
+define(['N/record', 'N/search'],
     /**
  * @param{record} record
  */
-    (record, search, runtime, task) => {
+    (record, search) => {
 
         const afterSubmit = (scriptContext) => {
             log.debug("CONTEXT: ", scriptContext.type);
-            let executionContext = runtime.executionContext;
-            log.debug("executionContext: ", executionContext);
-            if (scriptContext.type == 'create' && executionContext == 'CSVIMPORT'){
+            if (scriptContext.type == 'create'){
                 try {
                     const newRecord = scriptContext.newRecord;
                     let recType = newRecord.type
@@ -23,25 +21,72 @@ define(['N/record', 'N/search', 'N/runtime', 'N/task'],
                             isDynamic: true,
                         });
                     log.debug("objRecord", objRecord)
-                    
                     if (objRecord){
-                        let strOutlet = objRecord.getValue({
-                            fieldId: 'custrecord_fm_outlet',
+                        let menuId = objRecord.getValue({
+                            fieldId:'custrecord_fcs_menu'
                         })
-                        log.debug("afterSubmit strOutlet", strOutlet)
-                        if (strOutlet){
-                            let scriptTask = task.create({taskType: task.TaskType.MAP_REDUCE});
-                            scriptTask.scriptId = 'customscript_create_subtab_food_menu_mr';
-                            scriptTask.params = {
-                                'custscript_recordId_param' : newRecord.id,
-                                'custscript_recordType_param': newRecord.type,
-                                'custscript_recordOutlet_param': strOutlet,
-                            };
-                            log.debug('scriptTask.params', scriptTask.params)
-                            let scriptTaskId = scriptTask.submit();
+                        log.debug("afterSubmit menuId", menuId)
+    
+                        if (menuId){
+                            let arrCustomIngredients = getMainRecipe(menuId)
+                            let arrCurrentCustomIng = getCurrentCustomIng(strId)
+    
+                            deleteCurrentIng(arrCurrentCustomIng)
+    
+                            arrCustomIngredients.forEach(data => {
+                                log.debug("afterSubmit data", data)
+                                objRecord.selectNewLine({
+                                    sublistId:'recmachcustrecord_related_food_menu'
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_ingdt_c',
+                                    value: data.recItemCode,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_qty_c',
+                                    value: data.recQty,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_uom_c',
+                                    value: data.recUom,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_customamount',
+                                    value: data.recAmount,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_customunit',
+                                    value: data.recUnitCost,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.setCurrentSublistValue({
+                                    sublistId:'recmachcustrecord_related_food_menu',
+                                    fieldId: 'custrecord_g_kitchen_c',
+                                    value: data.recCommonItem,
+                                    ignoreFieldChange: true
+                                })
+                                objRecord.commitLine({
+                                    sublistId: 'recmachcustrecord_related_food_menu'
+                                })
+                            });
+                            let recordId = objRecord.save({
+                                enableSourcing: true,
+                                ignoreMandatoryFields: true
+                            });
+                            log.debug("recordId" + recType, recordId)
                             
-                            log.debug('scriptTaskId',scriptTaskId)
+    
                         }
+    
                     }               
                 } catch (err) {
                     log.error('afterSubmit', err.message);
