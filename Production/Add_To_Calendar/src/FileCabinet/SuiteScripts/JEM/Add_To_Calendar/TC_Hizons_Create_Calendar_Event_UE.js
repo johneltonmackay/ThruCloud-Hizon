@@ -3,19 +3,22 @@
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  */
-define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
-    function(record, runtime, search, url, format) {
+define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format', 'N/ui/message'],
+    function(record, runtime, search, url, format, message) {
   
       function beforeLoad_hizon_cal_event(scriptContext) {
-  
-        var ojbRecord = scriptContext.newRecord;
-  
-        let strBanquetType = ojbRecord.getValue({
+
+        log.debug('scriptContext', scriptContext)
+        const newRecord = scriptContext.newRecord
+        const objForm =  scriptContext.form;
+        log.debug('newRecord.type', newRecord.type)
+        log.debug('objForm', objForm)
+        let strBanquetType = newRecord.getValue({
           fieldId: 'custrecord_charge_to',
         });
         log.debug('beforeLoad_hizon_cal_event strBanquetType', strBanquetType);
         if (strBanquetType != 4 && strBanquetType != 26 && strBanquetType){ // Not Canteen and Not Falsy Value and Not Restaurant
-          let strQueryString = ojbRecord.getValue({
+          let strQueryString = newRecord.getValue({
           fieldId: 'entryformquerystring',
           });
   
@@ -57,14 +60,14 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                 log.debug('beforeLoad: endTime', endTime);
                 if (strClass == "3") {
                   if (startTime) {
-                    ojbRecord.setValue({
+                    newRecord.setValue({
                       fieldId: 'custrecord_event_start_time',
                       value: startTime
                     });
                   }
         
                   if (endTime) {
-                    ojbRecord.setValue({
+                    newRecord.setValue({
                       fieldId: 'custrecord_event_end_time',
                       value: endTime
                     });
@@ -74,6 +77,44 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                 log.debug(e.message);
               }
             }
+          }
+
+          if(scriptContext.type === scriptContext.UserEventType.VIEW){
+              if(newRecord.type == 'customrecord_costing_sheet'){
+                var chargeTo = newRecord.getValue({
+                  fieldId: 'custrecord_charge_to'
+                })
+                if(chargeTo != 4){
+                  var foodcalendar = newRecord.getValue({
+                    fieldId: 'custrecord_food_calendar'
+                  })
+                  var strStatus = newRecord.getValue({
+                    fieldId: 'custrecord_processing_status'
+                  })
+
+                  if (!foodcalendar && strStatus == 'In Progress'){
+                    objForm.addPageInitMessage({
+                      type: message.Type.CONFIRMATION,
+                      message: 'Calendar Processing Status: ' + strStatus,
+                      duration: 5000
+                    });
+                  }
+
+                  if (foodcalendar){
+                    var idvalue = record.submitFields({
+                      type: 'customrecord_costing_sheet',
+                      id: newRecord.id,
+                      values: {
+                          custrecord_processing_status: 'COMPLETE',
+                      },
+                      options: {
+                          enableSourcing: true,
+                          ignoreMandatoryFields : true
+                    }});
+                    log.debug('status COMPLETE', idvalue)
+                  }
+                }
+              }
           }
         
         }
@@ -117,6 +158,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
           }
           log.debug('afterSubmit_hizon_cal_event: isSubFB', isSubFB)
           if ((scriptContext.type === scriptContext.UserEventType.CREATE || scriptContext.type === scriptContext.UserEventType.EDIT) && statusValue == 2 && isSubFB) {
+            
             log.debug('UE type', scriptContext.type);
             var id = currentRecord.id;
         
@@ -227,6 +269,11 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                   }
                 }
               } else {
+                currentRecord.setValue({
+                  fieldId: 'custrecord_processing_status',
+                  value: 'In Progress'
+                })
+    
                 log.debug('foodcalendar if else', foodcalendar)
                 log.debug('foodcalendar  if else', subsValue)
                 var eventRec = record.create({
@@ -353,6 +400,11 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                   fieldId: 'custrecordcalender_update',
                   value: true
                 })
+
+                costSheetRec.setValue({
+                  fieldId: 'custrecord_processing_status',
+                  value: 'COMPLETE'
+                })
                 
                 costSheetRec.save();
         
@@ -478,6 +530,12 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
                   }
                   log.debug("calendarcount:", calendarcount)
                   if (calendarcount == 0) {
+
+                    currentRecord.setValue({
+                      fieldId: 'custrecord_processing_status',
+                      value: 'In Progress'
+                    })
+        
                     var dateOnly = format.format({
                       value: group2Cat[0].date,
                       type: format.Type.DATE
@@ -605,6 +663,7 @@ define(['N/record', 'N/runtime', 'N/search', 'N/url', 'N/format'],
         
                       menuRecord.save();
                     }
+
                   } else if (calendarcount > 0) {
                     log.debug('calendar count > 0', calendarcount)
                     for (var i = 0; i < group2Cat.length; i++) {

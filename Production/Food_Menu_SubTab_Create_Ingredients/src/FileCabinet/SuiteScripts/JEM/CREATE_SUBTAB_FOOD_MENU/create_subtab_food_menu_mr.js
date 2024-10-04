@@ -48,35 +48,36 @@ define(['N/record', 'N/search', 'N/runtime', 'N/query'],
             let arrFoodMenuData = objReduceValues.foodMenuData
             
             arrFoodMenuData.forEach(data => {
+                let menuCost = data.menuCost
                 let currentMenu = data.menu
                 let frFieldNoPax = data.recipeNoPax
                 let updatePax = data.noPax
                 let lineId = data.internalid
                 let parentOutlet = strOutlet
                 log.debug('reduce data.internalid', data.internalid)
-                var rec = record.load({
-                    type: 'customrecord_food_menu_fb',
-                    id: data.internalid
-                });
+                try {
+                    var recordId = record.submitFields({
+                        type: 'customrecord_food_menu_fb',
+                        id: data.internalid,
+                        values: {
+                            customrecord_food_menu_fb: data.internalid,
+                            custrecord_fm_outlet: strOutlet,
+                            // custrecord_menu_cost: menuCost / updatePax
+                        },
+                        options: {
+                            enableSourcing: true,
+                            ignoreMandatoryFields : true
+                    }});
 
-                rec.setValue({
-                    fieldId: 'custrecord_fm_outlet',
-                    value: strOutlet
-                });
-
-                rec.setValue({
-                    fieldId: 'custrecord_food_menu_id',
-                    value: data.internalid
-                });
-                let recordId = rec.save({
-                    enableSourcing: true,
-                    ignoreMandatoryFields: true
-                });
-                log.debug("recordId" + strRecType, recordId)
-
-                if (recordId){
-                    createCustomIngredients(currentMenu, frFieldNoPax, updatePax, lineId, parentOutlet)
+                    log.debug("recordId" + strRecType, recordId)
+    
+                    if (recordId){
+                        createCustomIngredients(currentMenu, frFieldNoPax, updatePax, lineId, parentOutlet)
+                    }
+                } catch (error) {
+                    log.error('reduce error', error.message)
                 }
+
             });
         }
 
@@ -87,21 +88,23 @@ define(['N/record', 'N/search', 'N/runtime', 'N/query'],
         // Private Function
 
         const getFoodMenuData = (recId, recType) => {
+            log.debug('getFoodMenuData recId', recId)
+            log.debug('getFoodMenuData recType', recType)
             let arrFoodMenuData = [];
             let filters;
             try {
 
                 if (recType == 'customrecord_costing_sheet') {
                     filters = [
-                        ['custrecord_related_topsheet.internalid', 'anyof', recId],
+                        ['custrecord_related_topsheet.internalid', 'anyof', JSON.parse(recId)],
                     ];
                 } else if (recType == 'customrecord_food_menu_fb'){
                     filters = [
-                        ['internalid', 'anyof', recId],
+                        ['internalid', 'anyof', JSON.parse(recId)],
                     ];
                 } else {
                     filters = [
-                        ['custrecord_transaction_fb_food.internalid', 'anyof', recId],
+                        ['custrecord_transaction_fb_food.internalid', 'anyof', JSON.parse(recId)],
                         'AND',
                         ['custrecord_transaction_fb_food.mainline', 'is', 'T']
                     ];
@@ -282,13 +285,13 @@ define(['N/record', 'N/search', 'N/runtime', 'N/query'],
 
                     objCustomIngredient.setValue({
 						fieldId: 'custrecord_customingdt_perishable',
-						value: data.isPerishable,
+						value: data.isPerishable ? data.isPerishable : false,
 						ignoreFieldChange: true
 					});
 
                     objCustomIngredient.setValue({
-						fieldId: 'custrecord_customingdt_commongk',
-						value: data.isCommon,
+						fieldId: 'custrecord_customingdt_commongk', 
+						value: data.isCommon ? data.isCommon : false ,
 						ignoreFieldChange: true
 					});
                     
@@ -324,7 +327,7 @@ define(['N/record', 'N/search', 'N/runtime', 'N/query'],
 			
 					objCustomIngredient.setValue({
 						fieldId: 'custrecord_g_kitchen_c',
-						value: data.commonItem,
+						value: data.commonItem ? data.commonItem : false,
 						ignoreFieldChange: true
 					});
 			

@@ -71,7 +71,7 @@ function(runtime, currentRecord, search, record, url) {
 
             currRecObj.setValue({
                 fieldId : 'custrecord_header_modified',
-                value : false
+                value : true
             })
 
             var budget = currRecObj.getValue({

@@ -19,7 +19,7 @@ define(['N/record', 'N/task', 'N/ui/message'],
                 log.debug('objForm', objForm)
                 if(newRecord.type == 'customrecord_costing_sheet'){
                     taskId = newRecord.getValue({
-                        fieldId: 'custrecord_taskid'
+                        fieldId: 'custrecord_create_custom_ing_task_id'
                     })
                 } else {
                     taskId = newRecord.getValue({
@@ -37,19 +37,32 @@ define(['N/record', 'N/task', 'N/ui/message'],
                     if (stStatus === 'PROCESSING'){
                         objForm.addPageInitMessage({
                             type: message.Type.CONFIRMATION,
-                            message: 'Custom Ingredients Creation ' + stStatus,
+                            message: 'Custom Ingredients Creation: ' + stStatus,
                             duration: 5000
                         });
                     } else if (stStatus === 'COMPLETE'){
                         objForm.addPageInitMessage({
                             type: message.Type.CONFIRMATION,
-                            message: 'Custom Ingredients Creation ' + stStatus,
+                            message: 'Custom Ingredients Creation: ' + stStatus,
                             duration: 5000
                         });
+                        if(newRecord.type == 'customrecord_costing_sheet'){
+                            var idvalue = record.submitFields({
+                                type: 'customrecord_costing_sheet',
+                                id: newRecord.id,
+                                values: {
+                                    custrecord_processing_status: stStatus,
+                                },
+                                options: {
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields : true
+                            }});
+                            log.debug('status COMPLETE', idvalue)
+                        }
                     } else if (stStatus === 'PENDING'){
                         objForm.addPageInitMessage({
                             type: message.Type.CONFIRMATION,
-                            message: 'Pending Custom Ingredients Creation! ' + stStatus,
+                            message: 'Custom Ingredients Creation: ' + stStatus,
                             duration: 5000
                         });
                     } else {
@@ -58,6 +71,19 @@ define(['N/record', 'N/task', 'N/ui/message'],
                             message: 'If the issue persists, feel free to try again or reach out to your administrator for assistance.',
                             duration: 5000
                         });
+                        if(newRecord.type == 'customrecord_costing_sheet'){
+                            var idvalue = record.submitFields({
+                                type: 'customrecord_costing_sheet',
+                                id: newRecord.id,
+                                values: {
+                                    custrecord_processing_status: 'COMPLETE',
+                                },
+                                options: {
+                                    enableSourcing: true,
+                                    ignoreMandatoryFields : true
+                            }});
+                            log.debug('status COMPLETE', idvalue)
+                        }
                     }
                 }
 
@@ -100,8 +126,12 @@ define(['N/record', 'N/task', 'N/ui/message'],
         
                         if(newRecord.type == 'customrecord_costing_sheet'){
                             objCurrentRecord.setValue({
-                                fieldId: 'custrecord_taskid',
+                                fieldId: 'custrecord_create_custom_ing_task_id',
                                 value: scriptTaskId
+                            })
+                            objCurrentRecord.setValue({
+                                fieldId: 'custrecord_processing_status',
+                                value: 'In Progress'
                             })
                         } else {
                             objCurrentRecord.setValue({
